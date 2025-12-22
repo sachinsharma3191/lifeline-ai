@@ -13,5 +13,3 @@ class ServicesComponentImpl(
 ) : ServicesComponent, ComponentContext by componentContext {
     override val viewModel: ServicesViewModel = appContainer.servicesViewModel
 }
-```
-

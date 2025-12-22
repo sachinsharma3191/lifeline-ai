@@ -86,5 +86,3 @@ fun ServiceCard(service: CommunityService) {
         }
     }
 }
-```
-

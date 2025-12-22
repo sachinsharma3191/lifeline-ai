@@ -87,5 +87,3 @@ class MultiLayerAiClientTest {
         assertTrue(client.isAvailable())
     }
 }
-```
-

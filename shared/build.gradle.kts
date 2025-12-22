@@ -81,11 +81,15 @@ kotlin {
             implementation(libs.ktor.client.jvm)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.jdbc.driver)
+            // SQLite JDBC driver for JVM
+            implementation("org.xerial:sqlite-jdbc:3.44.1.0")
         }
         
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.turbine)
+            // Coroutines test support
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:${libs.versions.kotlinx.coroutines.get()}")
         }
         
         // JVM-only test dependencies

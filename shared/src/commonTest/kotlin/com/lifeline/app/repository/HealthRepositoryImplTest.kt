@@ -8,6 +8,7 @@ import com.lifeline.app.domain.health.SymptomCategory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,15 +43,17 @@ abstract class HealthRepositoryImplTest {
     fun `test get symptoms with date range`() = runTest {
         val now = Clock.System.now()
         val symptom1 = createTestSymptom(timestamp = now)
+        val twoDaysAgo = Instant.fromEpochMilliseconds(now.toEpochMilliseconds() - 2 * 24 * 60 * 60 * 1000L)
         val symptom2 = createTestSymptom(
             id = "symptom2",
-            timestamp = now.minus(kotlinx.datetime.DateTimeUnit.DAY, 2)
+            timestamp = twoDaysAgo
         )
         
         repository.addSymptom(symptom1)
         repository.addSymptom(symptom2)
         
-        val symptoms = repository.getSymptoms(now.minus(kotlinx.datetime.DateTimeUnit.DAY, 1), null).first()
+        val oneDayAgo = Instant.fromEpochMilliseconds(now.toEpochMilliseconds() - 24 * 60 * 60 * 1000L)
+        val symptoms = repository.getSymptoms(oneDayAgo, null).first()
         assertEquals(1, symptoms.size)
         assertEquals(symptom1.id, symptoms[0].id)
     }
