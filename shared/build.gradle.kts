@@ -3,6 +3,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    // Note: Using androidLibrary for now - the new plugin may not be available in AGP 8.11.2
+    // Will migrate to com.android.kotlin.multiplatform.library when AGP 9.0 is released
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.sqldelight)
 }
