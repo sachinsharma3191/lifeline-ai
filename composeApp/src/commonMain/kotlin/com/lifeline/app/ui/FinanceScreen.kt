@@ -221,7 +221,7 @@ fun AddTransactionDialog(
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         type = type,
                         category = category,
-                        timestamp = Clock.System.now(),
+                        timestamp = kotlinx.datetime.Clock.System.now(),
                         description = description.ifEmpty { null }
                     )
                     onAdd(transaction)

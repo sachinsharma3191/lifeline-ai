@@ -1,8 +1,10 @@
 package com.lifeline.app.utils
 
 actual fun formatDouble(value: Double, decimals: Int): String {
-    // JS doesn't have String.format, use manual formatting with toFixed-like behavior
-    val multiplier = kotlin.math.pow(10.0, decimals.toDouble())
+    // JS doesn't have String.format, use manual formatting
+    // Calculate multiplier manually (10^decimals)
+    var multiplier = 1.0
+    repeat(decimals) { multiplier *= 10.0 }
     val rounded = kotlin.math.round(value * multiplier) / multiplier
     return buildString {
         val parts = rounded.toString().split('.')
