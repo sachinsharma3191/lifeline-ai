@@ -118,15 +118,4 @@ abstract class HealthRepositoryImplTest {
     )
 }
 
-// Platform-specific test implementations
-class HealthRepositoryImplJvmTest : HealthRepositoryImplTest() {
-    override fun createDriver(): SqlDriver {
-        val driver = app.cash.sqldelight.drivers.jdbc.sqlite.JdbcSqliteDriver(
-            app.cash.sqldelight.drivers.jdbc.sqlite.JdbcSqliteDriver.IN_MEMORY
-        )
-        LifelineDatabase.Schema.create(driver)
-        return driver
-    }
-}
-```
-
+// Platform-specific test implementations moved to jvmTest

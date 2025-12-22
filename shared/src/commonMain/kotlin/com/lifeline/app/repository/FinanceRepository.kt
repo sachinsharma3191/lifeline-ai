@@ -14,5 +14,4 @@ interface FinanceRepository {
     suspend fun deleteTransaction(id: String)
     suspend fun deleteGoal(id: String)
 }
-```
 

@@ -55,7 +55,7 @@ class LearningViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, aiResponse = null, error = null) }
             try {
-                val response = aiClient.processRequest(prompt)
+                val response = aiClient.processRequest(prompt, emptyMap())
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 
@@ -69,15 +69,17 @@ class LearningViewModel(
     }
     
     private fun loadGoals() {
-        repository.getGoals()
-            .onEach { _goals.value = it }
-            .launchIn(scope)
+        scope.launch {
+            repository.getGoals()
+                .collect { _goals.value = it }
+        }
     }
     
     private fun loadModules() {
-        repository.getModules()
-            .onEach { _modules.value = it }
-            .launchIn(scope)
+        scope.launch {
+            repository.getModules()
+                .collect { _modules.value = it }
+        }
     }
 }
 

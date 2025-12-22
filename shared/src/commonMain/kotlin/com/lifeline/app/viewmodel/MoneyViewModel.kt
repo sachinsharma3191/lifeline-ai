@@ -67,7 +67,7 @@ class MoneyViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, aiResponse = null, error = null) }
             try {
-                val response = aiClient.processRequest(prompt)
+                val response = aiClient.processRequest(prompt, emptyMap())
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 
@@ -81,15 +81,17 @@ class MoneyViewModel(
     }
     
     private fun loadTransactions() {
-        repository.getTransactions(null, null)
-            .onEach { _transactions.value = it }
-            .launchIn(scope)
+        scope.launch {
+            repository.getTransactions(null, null)
+                .collect { _transactions.value = it }
+        }
     }
     
     private fun loadGoals() {
-        repository.getGoals()
-            .onEach { _goals.value = it }
-            .launchIn(scope)
+        scope.launch {
+            repository.getGoals()
+                .collect { _goals.value = it }
+        }
     }
 }
 

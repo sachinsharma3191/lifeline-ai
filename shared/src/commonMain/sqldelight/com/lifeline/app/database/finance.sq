@@ -1,3 +1,47 @@
+CREATE TABLE financial_transaction (
+    id TEXT PRIMARY KEY,
+    amount REAL NOT NULL,
+    type TEXT NOT NULL,
+    category TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    description TEXT,
+    tags TEXT
+);
 
+CREATE TABLE financial_goal (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    target_amount REAL NOT NULL,
+    current_amount REAL NOT NULL,
+    deadline INTEGER,
+    category TEXT NOT NULL
+);
 
+insertTransaction:
+INSERT INTO financial_transaction(id, amount, type, category, timestamp, description, tags)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
+getAllTransactions:
+SELECT * FROM financial_transaction
+WHERE (?1 IS NULL OR timestamp >= ?1)
+AND (?2 IS NULL OR timestamp <= ?2)
+ORDER BY timestamp DESC;
+
+deleteTransaction:
+DELETE FROM financial_transaction WHERE id = ?;
+
+insertFinancialGoal:
+INSERT INTO financial_goal(id, name, target_amount, current_amount, deadline, category)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getAllFinancialGoals:
+SELECT * FROM financial_goal
+ORDER BY deadline ASC;
+
+updateFinancialGoal:
+UPDATE financial_goal
+SET name = ?, target_amount = ?, current_amount = ?, deadline = ?, category = ?
+WHERE id = ?;
+
+deleteFinancialGoal:
+DELETE FROM financial_goal WHERE id = ?;

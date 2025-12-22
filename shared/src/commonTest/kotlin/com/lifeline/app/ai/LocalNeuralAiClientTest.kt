@@ -10,7 +10,7 @@ class LocalNeuralAiClientTest {
     
     @Test
     fun `test process request`() = runTest {
-        val response = client.processRequest("test prompt")
+        val response = client.processRequest("test prompt", emptyMap())
         
         assertEquals(AiSource.LOCAL_NEURAL, response.source)
         assertTrue(response.text.isNotBlank())
@@ -37,9 +37,7 @@ class LocalNeuralAiClientTest {
     
     @Test
     fun `test health domain response`() = runTest {
-        val response = client.processRequest("I have health concerns")
+        val response = client.processRequest("I have health concerns", emptyMap())
         assertTrue(response.text.contains("health", ignoreCase = true))
     }
 }
-```
-

@@ -55,7 +55,7 @@ class HealthViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, aiResponse = null, error = null) }
             try {
-                val response = aiClient.processRequest(prompt)
+                val response = aiClient.processRequest(prompt, emptyMap())
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 
@@ -69,15 +69,17 @@ class HealthViewModel(
     }
     
     private fun loadSymptoms() {
-        repository.getSymptoms(null, null)
-            .onEach { _symptoms.value = it }
-            .launchIn(scope)
+        scope.launch {
+            repository.getSymptoms(null, null)
+                .collect { _symptoms.value = it }
+        }
     }
     
     private fun loadTimelineEntries() {
-        repository.getTimelineEntries(null, null)
-            .onEach { _timelineEntries.value = it }
-            .launchIn(scope)
+        scope.launch {
+            repository.getTimelineEntries(null, null)
+                .collect { _timelineEntries.value = it }
+        }
     }
 }
 

@@ -13,5 +13,4 @@ interface LearningRepository {
     suspend fun getModules(): Flow<List<LearningModule>>
     suspend fun completeModule(id: String)
 }
-```
 

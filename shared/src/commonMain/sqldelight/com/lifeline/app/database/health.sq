@@ -1,3 +1,57 @@
+CREATE TABLE symptom (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    severity INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    notes TEXT,
+    category TEXT NOT NULL
+);
 
+CREATE TABLE health_timeline_entry (
+    id TEXT PRIMARY KEY,
+    timestamp INTEGER NOT NULL,
+    notes TEXT
+);
 
+CREATE TABLE symptom_timeline_entry (
+    symptom_id TEXT NOT NULL,
+    timeline_entry_id TEXT NOT NULL,
+    PRIMARY KEY (symptom_id, timeline_entry_id),
+    FOREIGN KEY (symptom_id) REFERENCES symptom(id),
+    FOREIGN KEY (timeline_entry_id) REFERENCES health_timeline_entry(id)
+);
 
+insertSymptom:
+INSERT INTO symptom(id, name, severity, timestamp, notes, category)
+VALUES (?, ?, ?, ?, ?, ?);
+
+getAllSymptoms:
+SELECT * FROM symptom
+WHERE (?1 IS NULL OR timestamp >= ?1)
+AND (?2 IS NULL OR timestamp <= ?2)
+ORDER BY timestamp DESC;
+
+deleteSymptom:
+DELETE FROM symptom WHERE id = ?;
+
+insertTimelineEntry:
+INSERT INTO health_timeline_entry(id, timestamp, notes)
+VALUES (?, ?, ?);
+
+getAllTimelineEntries:
+SELECT * FROM health_timeline_entry
+WHERE (?1 IS NULL OR timestamp >= ?1)
+AND (?2 IS NULL OR timestamp <= ?2)
+ORDER BY timestamp DESC;
+
+deleteTimelineEntry:
+DELETE FROM health_timeline_entry WHERE id = ?;
+
+getSymptomsForTimelineEntry:
+SELECT s.* FROM symptom s
+INNER JOIN symptom_timeline_entry ste ON s.id = ste.symptom_id
+WHERE ste.timeline_entry_id = ?;
+
+insertSymptomTimelineEntry:
+INSERT INTO symptom_timeline_entry(symptom_id, timeline_entry_id)
+VALUES (?, ?);

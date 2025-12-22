@@ -19,8 +19,8 @@ class MultiLayerAiClient(
         // Try Cloud AI first
         cloudAi?.let { client ->
             if (client.isAvailable()) {
-                return try {
-                    client.processRequest(prompt, context)
+                try {
+                    return client.processRequest(prompt, context)
                 } catch (e: Exception) {
                     // Fall through to next layer
                 }
@@ -30,8 +30,8 @@ class MultiLayerAiClient(
         // Try Local Neural AI
         localNeuralAi?.let { client ->
             if (client.isAvailable()) {
-                return try {
-                    client.processRequest(prompt, context)
+                try {
+                    return client.processRequest(prompt, context)
                 } catch (e: Exception) {
                     // Fall through to rule-based
                 }

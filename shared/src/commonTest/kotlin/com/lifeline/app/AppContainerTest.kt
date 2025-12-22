@@ -3,7 +3,7 @@ package com.lifeline.app
 import app.cash.sqldelight.db.SqlDriver
 import com.lifeline.app.database.DatabaseDriverFactory
 import com.lifeline.app.database.LifelineDatabase
-import io.mockk.mockk
+// MockK is only available in jvmTest, not commonTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -37,19 +37,3 @@ abstract class AppContainerTest {
         // Should not throw
     }
 }
-
-class AppContainerJvmTest : AppContainerTest() {
-    override fun createDatabaseDriverFactory(): DatabaseDriverFactory {
-        return object : DatabaseDriverFactory() {
-            override fun createDriver(): SqlDriver {
-                val driver = app.cash.sqldelight.drivers.jdbc.sqlite.JdbcSqliteDriver(
-                    app.cash.sqldelight.drivers.jdbc.sqlite.JdbcSqliteDriver.IN_MEMORY
-                )
-                LifelineDatabase.Schema.create(driver)
-                return driver
-            }
-        }
-    }
-}
-```
-

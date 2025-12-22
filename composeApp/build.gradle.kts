@@ -14,7 +14,7 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_25)
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 
@@ -30,16 +30,20 @@ kotlin {
 
     jvm()
 
-    js {
+    js(IR) {
         browser()
         binaries.executable()
     }
 
+    // WASM target temporarily disabled - SQLDelight doesn't support WASM
+    // Uncomment when SQLDelight adds WASM support
+    /*
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         binaries.executable()
     }
+    */
 
     sourceSets {
         androidMain.dependencies {
@@ -93,8 +97,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_25
-        targetCompatibility = JavaVersion.VERSION_25
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 }
 

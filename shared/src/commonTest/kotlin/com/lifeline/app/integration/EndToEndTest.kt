@@ -70,19 +70,3 @@ abstract class EndToEndTest {
         assertNotNull(uiState.aiResponse)
     }
 }
-
-class EndToEndJvmTest : EndToEndTest() {
-    override fun createDatabaseDriverFactory(): DatabaseDriverFactory {
-        return object : DatabaseDriverFactory() {
-            override fun createDriver(): SqlDriver {
-                val driver = app.cash.sqldelight.drivers.jdbc.sqlite.JdbcSqliteDriver(
-                    app.cash.sqldelight.drivers.jdbc.sqlite.JdbcSqliteDriver.IN_MEMORY
-                )
-                LifelineDatabase.Schema.create(driver)
-                return driver
-            }
-        }
-    }
-}
-```
-

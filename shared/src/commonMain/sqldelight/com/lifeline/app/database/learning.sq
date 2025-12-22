@@ -1,3 +1,47 @@
+CREATE TABLE learning_goal (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    target_date INTEGER,
+    progress REAL NOT NULL,
+    status TEXT NOT NULL
+);
 
+CREATE TABLE learning_module (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    content TEXT NOT NULL,
+    estimated_duration INTEGER NOT NULL,
+    completed INTEGER NOT NULL DEFAULT 0,
+    completed_at INTEGER
+);
 
+insertLearningGoal:
+INSERT INTO learning_goal(id, title, description, target_date, progress, status)
+VALUES (?, ?, ?, ?, ?, ?);
 
+getAllLearningGoals:
+SELECT * FROM learning_goal
+ORDER BY target_date ASC;
+
+updateLearningGoal:
+UPDATE learning_goal
+SET title = ?, description = ?, target_date = ?, progress = ?, status = ?
+WHERE id = ?;
+
+deleteLearningGoal:
+DELETE FROM learning_goal WHERE id = ?;
+
+insertLearningModule:
+INSERT INTO learning_module(id, title, description, content, estimated_duration, completed, completed_at)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+getAllLearningModules:
+SELECT * FROM learning_module
+ORDER BY completed ASC, title ASC;
+
+completeLearningModule:
+UPDATE learning_module
+SET completed = 1, completed_at = ?
+WHERE id = ?;
