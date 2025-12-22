@@ -2,6 +2,7 @@ package com.lifeline.app.navigation
 
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleOwner
+import com.lifeline.app.AppContainer
 import com.lifeline.app.domain.health.HealthTimelineEntry
 import com.lifeline.app.domain.health.Symptom
 import com.lifeline.app.viewmodel.HealthViewModel

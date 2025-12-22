@@ -9,6 +9,7 @@ import com.lifeline.app.navigation.RootComponentImpl
 import com.lifeline.app.ui.MainScreen
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import io.ktor.client.engine.HttpClientEngine
 
 @Composable
 fun App(
