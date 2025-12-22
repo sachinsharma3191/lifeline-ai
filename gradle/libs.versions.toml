@@ -19,6 +19,9 @@ logback = "1.5.21"
 sqldelight = "2.0.2"
 decompose = "3.0.0"
 essenty = "2.0.0"
+mockk = "1.13.8"
+turbine = "1.0.0"
+kotest = "5.8.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -53,6 +56,10 @@ decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decom
 essenty-lifecycle = { module = "com.arkivanov.essenty:lifecycle", version.ref = "essenty" }
 essenty-instance-keeper = { module = "com.arkivanov.essenty:instance-keeper", version.ref = "essenty" }
 essenty-back-handler = { module = "com.arkivanov.essenty:back-handler", version.ref = "essenty" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

@@ -67,6 +67,10 @@ kotlin {
         
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.mockk)
+            implementation(libs.turbine)
+            implementation(libs.kotest.runner)
+            implementation(libs.kotest.assertions)
         }
     }
 }
