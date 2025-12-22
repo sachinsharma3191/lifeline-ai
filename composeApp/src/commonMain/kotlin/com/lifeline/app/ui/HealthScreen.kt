@@ -198,7 +198,7 @@ fun AddSymptomDialog(
                         id = randomUUID(),
                         name = name,
                         severity = severity,
-                        timestamp = System.now(),
+                        timestamp = currentTimestamp(),
                         notes = notes.ifEmpty { null },
                         category = category
                     )

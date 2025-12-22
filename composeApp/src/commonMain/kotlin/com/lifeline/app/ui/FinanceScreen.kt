@@ -15,10 +15,9 @@ import com.lifeline.app.domain.finance.FinancialGoal
 import com.lifeline.app.domain.finance.Transaction
 import com.lifeline.app.domain.finance.TransactionType
 import com.lifeline.app.navigation.FinanceComponent
+import com.lifeline.app.utils.currentTimestamp
 import com.lifeline.app.utils.formatDouble
 import com.lifeline.app.utils.randomUUID
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -222,7 +221,7 @@ fun AddTransactionDialog(
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         type = type,
                         category = category,
-                        timestamp = Instant.fromEpochMilliseconds(kotlin.js.Date.now().toLong()),
+                        timestamp = currentTimestamp(),
                         description = description.ifEmpty { null }
                     )
                     onAdd(transaction)
