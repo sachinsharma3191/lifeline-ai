@@ -49,6 +49,8 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            // Material Icons Extended for Android - provides androidx.compose.material.icons.Icons
+            implementation("androidx.compose.material:material-icons-extended:1.7.1")
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -57,10 +59,14 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            // Try using compose.materialIconsExtended if available
+            // Note: Material Icons may need to be added per-platform (see androidMain below)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(projects.shared)
+            implementation(libs.kotlinx.datetime)
             implementation(libs.decompose)
+            implementation("com.arkivanov.decompose:decompose-compose:${libs.versions.decompose.get()}")
             implementation(libs.essenty.lifecycle)
             implementation(libs.essenty.instance.keeper)
             implementation(libs.essenty.back.handler)

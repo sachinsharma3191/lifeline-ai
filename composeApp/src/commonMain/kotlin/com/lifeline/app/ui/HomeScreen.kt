@@ -11,8 +11,6 @@ import com.lifeline.app.navigation.HomeComponent
 
 @Composable
 fun HomeScreen(component: HomeComponent) {
-    val model by component.model.subscribeAsState()
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -21,7 +19,7 @@ fun HomeScreen(component: HomeComponent) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = model.greeting,
+            text = "Welcome to LifelineAI",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )

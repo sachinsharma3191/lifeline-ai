@@ -3,17 +3,19 @@ package com.lifeline.app.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.finance.FinancialGoal
 import com.lifeline.app.domain.finance.Transaction
 import com.lifeline.app.domain.finance.TransactionType
 import com.lifeline.app.navigation.FinanceComponent
-import kotlinx.datetime.Clock
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,10 +24,10 @@ fun FinanceScreen(component: FinanceComponent) {
     val uiState by viewModel.uiState.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
     val goals by viewModel.goals.collectAsState()
-    
+
     var showAddTransactionDialog by remember { mutableStateOf(false) }
     var showAddGoalDialog by remember { mutableStateOf(false) }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,13 +64,13 @@ fun FinanceScreen(component: FinanceComponent) {
             if (uiState.isLoading) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
-            
+
             Text(
                 text = "Financial Goals",
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -76,15 +78,15 @@ fun FinanceScreen(component: FinanceComponent) {
                     GoalCard(goal)
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Text(
                 text = "Recent Transactions",
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -94,7 +96,7 @@ fun FinanceScreen(component: FinanceComponent) {
             }
         }
     }
-    
+
     if (showAddTransactionDialog) {
         AddTransactionDialog(
             onDismiss = { showAddTransactionDialog = false },
@@ -104,7 +106,7 @@ fun FinanceScreen(component: FinanceComponent) {
             }
         )
     }
-    
+
     if (showAddGoalDialog) {
         AddGoalDialog(
             onDismiss = { showAddGoalDialog = false },
@@ -140,9 +142,9 @@ fun TransactionCard(transaction: Transaction) {
             Text(
                 text = "${if (transaction.type == TransactionType.EXPENSE) "-" else "+"}$${String.format("%.2f", transaction.amount)}",
                 style = MaterialTheme.typography.titleMedium,
-                color = if (transaction.type == TransactionType.EXPENSE) 
-                    MaterialTheme.colorScheme.error 
-                else 
+                color = if (transaction.type == TransactionType.EXPENSE)
+                    MaterialTheme.colorScheme.error
+                else
                     MaterialTheme.colorScheme.primary
             )
         }
@@ -151,8 +153,8 @@ fun TransactionCard(transaction: Transaction) {
 
 @Composable
 fun GoalCard(goal: FinancialGoal) {
-    val progress = (goal.currentAmount / goal.targetAmount).coerceIn(0f, 1f)
-    
+    val progress = (goal.currentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f)
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -182,7 +184,7 @@ fun AddTransactionDialog(
     var description by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(TransactionType.EXPENSE) }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Transaction") },
@@ -242,7 +244,7 @@ fun AddGoalDialog(
     var name by remember { mutableStateOf("") }
     var targetAmount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
-    
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Financial Goal") },

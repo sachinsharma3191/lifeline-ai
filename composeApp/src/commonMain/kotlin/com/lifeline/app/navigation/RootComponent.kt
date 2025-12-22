@@ -30,10 +30,12 @@ class RootComponentImpl(
     
     private val navigation = StackNavigation<RootComponent.Tab>()
     
-    override val stack: Value<ChildStack<*, RootComponent.Child>> =
+    override val stack: Value<ChildStack<RootComponent.Tab, RootComponent.Child>> =
         childStack(
             source = navigation,
-            initialConfiguration = RootComponent.Tab.HOME,
+            initialStack = { listOf(RootComponent.Tab.HOME) },
+            saveStack = { stack -> null }, // No persistence needed for tabs
+            restoreStack = { null },
             handleBackButton = true,
             childFactory = ::child
         )
