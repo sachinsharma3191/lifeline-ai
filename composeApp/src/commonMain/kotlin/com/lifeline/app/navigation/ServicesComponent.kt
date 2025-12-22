@@ -1,6 +1,7 @@
 package com.lifeline.app.navigation
 
 import com.arkivanov.decompose.ComponentContext
+import com.lifeline.app.AppContainer
 import com.lifeline.app.viewmodel.ServicesViewModel
 
 interface ServicesComponent {

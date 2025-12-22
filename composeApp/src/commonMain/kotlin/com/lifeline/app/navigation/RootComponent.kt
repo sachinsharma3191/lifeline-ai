@@ -33,7 +33,6 @@ class RootComponentImpl(
     override val stack: Value<ChildStack<*, RootComponent.Child>> =
         childStack(
             source = navigation,
-            serializer = Tab.serializer(),
             initialConfiguration = RootComponent.Tab.HOME,
             handleBackButton = true,
             childFactory = ::child
@@ -61,10 +60,4 @@ class RootComponentImpl(
                 ServicesComponentImpl(componentContext, appContainer)
             )
         }
-}
-
-// Serializer for Tab enum
-fun RootComponent.Tab.serializer() = object : StackNavigationSerializer<RootComponent.Tab> {
-    override fun save(configuration: RootComponent.Tab): String = configuration.name
-    override fun restore(data: String): RootComponent.Tab = RootComponent.Tab.valueOf(data)
 }

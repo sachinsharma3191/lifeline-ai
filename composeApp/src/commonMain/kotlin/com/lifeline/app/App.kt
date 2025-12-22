@@ -9,7 +9,6 @@ import com.lifeline.app.navigation.RootComponentImpl
 import com.lifeline.app.ui.MainScreen
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
-import io.ktor.client.engine.HttpClientEngine
 
 @Composable
 fun App(
@@ -22,9 +21,8 @@ fun App(
         }
         
         val appContainer = remember {
-            AppContainer(
-                databaseDriverFactory = databaseDriverFactory ?: createDatabaseDriverFactory(),
-                httpClientEngine = null
+            com.lifeline.app.AppContainer(
+                databaseDriverFactory = databaseDriverFactory ?: createDatabaseDriverFactory()
             )
         }
         
