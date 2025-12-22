@@ -5,6 +5,7 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
@@ -29,14 +30,21 @@ fun Application.module() {
         route("/api/v1") {
             route("/ai") {
                 post("/chat") {
-                    val request = call.receive<ChatRequest>()
-                    // Simulate AI processing
-                    val response = ChatResponse(
-                        text = "This is a simulated AI response. In production, this would connect to an LLM API.",
-                        confidence = 0.8f,
-                        source = "cloud"
-                    )
-                    call.respond(response)
+                    try {
+                        val request = call.receive<ChatRequest>()
+                        // Simulate AI processing
+                        val response = ChatResponse(
+                            text = "This is a simulated AI response. In production, this would connect to an LLM API.",
+                            confidence = 0.8f,
+                            source = "cloud"
+                        )
+                        call.respond(response)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.BadRequest,
+                            message = mapOf("error" to (e.message ?: "Unknown error"))
+                        )
+                    }
                 }
                 
                 get("/health") {

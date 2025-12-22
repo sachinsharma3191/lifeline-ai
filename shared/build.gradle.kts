@@ -9,8 +9,12 @@ plugins {
 
 kotlin {
     androidTarget {
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_25)
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(JvmTarget.JVM_21)
+                }
+            }
         }
     }
     
@@ -79,8 +83,8 @@ android {
     namespace = "com.lifeline.app.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_25
-        targetCompatibility = JavaVersion.VERSION_25
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
@@ -92,6 +96,7 @@ sqldelight {
         create("LifelineDatabase") {
             packageName.set("com.lifeline.app.database")
             generateAsync.set(true)
+            srcDirs("src/commonMain/sqldelight")
         }
     }
 }
