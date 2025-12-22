@@ -7,21 +7,22 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.lifeline.app.navigation.RootComponent
+import com.lifeline.app.utils.subscribeAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(component: RootComponent) {
-    val stack by component.stack.subscribeAsState()
-    val activeChild = stack.active.instance
+    val stackValue by component.stack.subscribeAsState()
+    val stack = stackValue as? com.arkivanov.decompose.router.stack.ChildStack<*, RootComponent.Child>
+    val activeChild = stack?.active?.instance
     
     Scaffold(
         bottomBar = {
             NavigationBar {
                 RootComponent.Tab.values().forEach { tab ->
                     NavigationBarItem(
-                        selected = stack.active.configuration == tab,
+                        selected = (stack?.active?.configuration as? RootComponent.Tab) == tab,
                         onClick = { component.onTabSelected(tab) },
                         icon = {
                             Icon(
@@ -48,6 +49,7 @@ fun MainScreen(component: RootComponent) {
                 is RootComponent.Child.Finance -> FinanceScreen(child.component)
                 is RootComponent.Child.Learning -> LearningScreen(child.component)
                 is RootComponent.Child.Services -> ServicesScreen(child.component)
+                null -> {} // Loading or no child
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.health.Symptom
 import com.lifeline.app.domain.health.SymptomCategory
 import com.lifeline.app.navigation.HealthComponent
+import com.lifeline.app.utils.randomUUID
 import kotlinx.datetime.Clock
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -194,7 +195,7 @@ fun AddSymptomDialog(
             TextButton(
                 onClick = {
                     val symptom = Symptom(
-                        id = java.util.UUID.randomUUID().toString(),
+                        id = randomUUID(),
                         name = name,
                         severity = severity,
                         timestamp = Clock.System.now(),

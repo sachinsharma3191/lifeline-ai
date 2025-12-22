@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.learning.LearningGoal
 import com.lifeline.app.domain.learning.LearningModule
 import com.lifeline.app.navigation.LearningComponent
+import com.lifeline.app.utils.randomUUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -186,7 +187,7 @@ fun AddLearningGoalDialog(
             TextButton(
                 onClick = {
                     val goal = LearningGoal(
-                        id = java.util.UUID.randomUUID().toString(),
+                        id = randomUUID(),
                         title = title,
                         description = description,
                         targetDate = null,

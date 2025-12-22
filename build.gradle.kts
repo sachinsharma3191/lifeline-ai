@@ -12,11 +12,12 @@ plugins {
 }
 
 // Configure Kotlin compiler options for all subprojects
+// Using JVM_21 to match Java 21 (JVM_25 is not yet widely supported)
 allprojects {
     afterEvaluate {
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
             compilerOptions {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
             }
         }
     }

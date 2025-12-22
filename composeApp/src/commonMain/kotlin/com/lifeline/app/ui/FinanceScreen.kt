@@ -15,6 +15,9 @@ import com.lifeline.app.domain.finance.FinancialGoal
 import com.lifeline.app.domain.finance.Transaction
 import com.lifeline.app.domain.finance.TransactionType
 import com.lifeline.app.navigation.FinanceComponent
+import com.lifeline.app.utils.formatDouble
+import com.lifeline.app.utils.randomUUID
+import kotlinx.datetime.Clock
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,7 +143,7 @@ fun TransactionCard(transaction: Transaction) {
                 }
             }
             Text(
-                text = "${if (transaction.type == TransactionType.EXPENSE) "-" else "+"}$${String.format("%.2f", transaction.amount)}",
+                text = "${if (transaction.type == TransactionType.EXPENSE) "-" else "+"}$${formatDouble(transaction.amount)}",
                 style = MaterialTheme.typography.titleMedium,
                 color = if (transaction.type == TransactionType.EXPENSE)
                     MaterialTheme.colorScheme.error
@@ -168,7 +171,7 @@ fun GoalCard(goal: FinancialGoal) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$${String.format("%.2f", goal.currentAmount)} / $${String.format("%.2f", goal.targetAmount)}",
+                text = "$${formatDouble(goal.currentAmount)} / $${formatDouble(goal.targetAmount)}",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -214,7 +217,7 @@ fun AddTransactionDialog(
             TextButton(
                 onClick = {
                     val transaction = Transaction(
-                        id = java.util.UUID.randomUUID().toString(),
+                        id = randomUUID(),
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         type = type,
                         category = category,
@@ -274,7 +277,7 @@ fun AddGoalDialog(
             TextButton(
                 onClick = {
                     val goal = FinancialGoal(
-                        id = java.util.UUID.randomUUID().toString(),
+                        id = randomUUID(),
                         name = name,
                         targetAmount = targetAmount.toDoubleOrNull() ?: 0.0,
                         currentAmount = 0.0,

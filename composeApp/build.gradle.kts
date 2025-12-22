@@ -35,23 +35,9 @@ kotlin {
         binaries.executable()
     }
 
-    // WASM target temporarily disabled - SQLDelight doesn't support WASM
-    // Uncomment when SQLDelight adds WASM support
-    /*
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        browser()
-        binaries.executable()
-    }
-    */
+    applyDefaultHierarchyTemplate()
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
-            // Material Icons Extended for Android - provides androidx.compose.material.icons.Icons
-            implementation("androidx.compose.material:material-icons-extended:1.7.1")
-        }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -59,24 +45,36 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
-            // Try using compose.materialIconsExtended if available
-            // Note: Material Icons may need to be added per-platform (see androidMain below)
+
+            // Correct way to call the multiplatform icons library
+            implementation(compose.materialIconsExtended)
+
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+            // Decompose & Extensions (Essential for cross-platform navigation)
+            implementation(libs.decompose)
+            implementation(libs.essenty.lifecycle)
+            // If you have decompose-compose in your libs.versions.toml, use it here:
+            // implementation(libs.decompose.compose)
+
             implementation(projects.shared)
             implementation(libs.kotlinx.datetime)
-            implementation(libs.decompose)
-            implementation("com.arkivanov.decompose:decompose-compose:${libs.versions.decompose.get()}")
-            implementation(libs.essenty.lifecycle)
-            implementation(libs.essenty.instance.keeper)
-            implementation(libs.essenty.back.handler)
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
+
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
         }
+
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+        }
+
+        // This is simplified now that hierarchy template is applied
+        jsMain.dependencies {
+            // JS specific UI logic if needed
         }
     }
 }
@@ -109,13 +107,13 @@ android {
 }
 
 dependencies {
+    // Corrected to use the compose plugin helper
     debugImplementation(compose.uiTooling)
 }
 
 compose.desktop {
     application {
         mainClass = "com.lifeline.app.MainKt"
-
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.lifeline.app"
