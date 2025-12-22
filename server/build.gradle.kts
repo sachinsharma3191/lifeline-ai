@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.ktor.serverCore)
     implementation(libs.ktor.serverNetty)
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:${libs.versions.ktor.get()}")
+    implementation("io.ktor:ktor-server-content-negotiation:${libs.versions.ktor.get()}")
     testImplementation(libs.ktor.serverTestHost)
     testImplementation(libs.kotlin.testJunit)
     testImplementation(libs.kotest.runner)
