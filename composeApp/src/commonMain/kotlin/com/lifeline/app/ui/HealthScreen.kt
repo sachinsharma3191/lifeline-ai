@@ -198,7 +198,7 @@ fun AddSymptomDialog(
                         id = randomUUID(),
                         name = name,
                         severity = severity,
-                        timestamp = kotlinx.datetime.Clock.System.now(),
+                        timestamp = System.now(),
                         notes = notes.ifEmpty { null },
                         category = category
                     )
