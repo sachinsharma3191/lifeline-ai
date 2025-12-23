@@ -1,7 +1,7 @@
 package com.lifeline.app
 
 import com.lifeline.app.AppContainer
-import com.lifeline.app.database.JvmDatabaseDriverFactory
+import com.lifeline.app.database.DatabaseDriverFactory
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -9,8 +9,10 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 
 const val SERVER_PORT = 8080
 
@@ -21,7 +23,7 @@ fun main() {
 
 fun Application.module() {
     // Initialize the app container with database and HTTP client
-    val appContainer = AppContainer(JvmDatabaseDriverFactory())
+    val appContainer = AppContainer(DatabaseDriverFactory())
     
     install(ContentNegotiation) {
         json()
@@ -39,13 +41,13 @@ fun Application.module() {
                         val request = call.receive<ChatRequest>()
                         // Use the AI client from app container
                         val response = runBlocking {
-                            appContainer.aiClient.generateResponse(request.prompt, request.context)
+                            appContainer.aiClient.processRequest(request.prompt, request.context.mapValues { it.value })
                         }
                         call.respond(
                             ChatResponse(
                                 text = response.text,
                                 confidence = response.confidence,
-                                source = response.source
+                                source = response.source.name
                             )
                         )
                     } catch (e: Exception) {
@@ -65,7 +67,7 @@ fun Application.module() {
                 get("/symptoms") {
                     try {
                         val symptoms = runBlocking {
-                            appContainer.healthRepository.getSymptoms()
+                            appContainer.healthRepository.getSymptoms(null, null).first()
                         }
                         call.respond(symptoms)
                     } catch (e: Exception) {
@@ -79,7 +81,7 @@ fun Application.module() {
                 get("/timeline") {
                     try {
                         val timeline = runBlocking {
-                            appContainer.healthRepository.getTimelineEntries()
+                            appContainer.healthRepository.getTimelineEntries(null, null).first()
                         }
                         call.respond(timeline)
                     } catch (e: Exception) {
