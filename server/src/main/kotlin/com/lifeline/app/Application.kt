@@ -1,5 +1,7 @@
 package com.lifeline.app
 
+import com.lifeline.app.AppContainer
+import com.lifeline.app.database.JvmDatabaseDriverFactory
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -7,8 +9,8 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
+import kotlinx.coroutines.runBlocking
 
 const val SERVER_PORT = 8080
 
@@ -18,6 +20,9 @@ fun main() {
 }
 
 fun Application.module() {
+    // Initialize the app container with database and HTTP client
+    val appContainer = AppContainer(JvmDatabaseDriverFactory())
+    
     install(ContentNegotiation) {
         json()
     }
@@ -32,13 +37,17 @@ fun Application.module() {
                 post("/chat") {
                     try {
                         val request = call.receive<ChatRequest>()
-                        // Simulate AI processing
-                        val response = ChatResponse(
-                            text = "This is a simulated AI response. In production, this would connect to an LLM API.",
-                            confidence = 0.8f,
-                            source = "cloud"
+                        // Use the AI client from app container
+                        val response = runBlocking {
+                            appContainer.aiClient.generateResponse(request.prompt, request.context)
+                        }
+                        call.respond(
+                            ChatResponse(
+                                text = response.text,
+                                confidence = response.confidence,
+                                source = response.source
+                            )
                         )
-                        call.respond(response)
                     } catch (e: Exception) {
                         call.respond(
                             status = io.ktor.http.HttpStatusCode.BadRequest,
@@ -54,42 +63,122 @@ fun Application.module() {
             
             route("/health") {
                 get("/symptoms") {
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val symptoms = runBlocking {
+                            appContainer.healthRepository.getSymptoms()
+                        }
+                        call.respond(symptoms)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
                 
                 get("/timeline") {
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val timeline = runBlocking {
+                            appContainer.healthRepository.getTimelineEntries()
+                        }
+                        call.respond(timeline)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
             }
             
             route("/finance") {
                 get("/transactions") {
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val transactions = runBlocking {
+                            appContainer.financeRepository.getTransactions(null, null)
+                        }
+                        call.respond(transactions)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
                 
                 get("/goals") {
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val goals = runBlocking {
+                            appContainer.financeRepository.getGoals()
+                        }
+                        call.respond(goals)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
             }
             
             route("/learning") {
                 get("/goals") {
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val goals = runBlocking {
+                            appContainer.learningRepository.getGoals()
+                        }
+                        call.respond(goals)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
                 
                 get("/modules") {
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val modules = runBlocking {
+                            appContainer.learningRepository.getModules()
+                        }
+                        call.respond(modules)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
             }
             
             route("/services") {
                 get {
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val services = runBlocking {
+                            appContainer.servicesRepository.getServices()
+                        }
+                        call.respond(services)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
                 
                 get("/search") {
-                    val query = call.request.queryParameters["q"] ?: ""
-                    call.respond(listOf<Map<String, Any>>())
+                    try {
+                        val query = call.request.queryParameters["q"] ?: ""
+                        val results = runBlocking {
+                            appContainer.servicesRepository.searchServices(query)
+                        }
+                        call.respond(results)
+                    } catch (e: Exception) {
+                        call.respond(
+                            status = io.ktor.http.HttpStatusCode.InternalServerError,
+                            message = mapOf("error" to (e.message ?: "Database error"))
+                        )
+                    }
                 }
             }
         }

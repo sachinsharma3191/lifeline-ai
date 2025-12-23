@@ -9,7 +9,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.finance.FinancialGoal
 import com.lifeline.app.domain.finance.Transaction
@@ -17,6 +19,7 @@ import com.lifeline.app.domain.finance.TransactionType
 import com.lifeline.app.navigation.FinanceComponent
 import com.lifeline.app.utils.currentTimestamp
 import com.lifeline.app.utils.formatDouble
+import com.lifeline.app.utils.longToInstant
 import com.lifeline.app.utils.randomUUID
 
 
@@ -221,7 +224,7 @@ fun AddTransactionDialog(
                         amount = amount.toDoubleOrNull() ?: 0.0,
                         type = type,
                         category = category,
-                        timestamp = currentTimestamp(),
+                        timestamp = longToInstant(currentTimestamp()),
                         description = description.ifEmpty { null }
                     )
                     onAdd(transaction)

@@ -4,9 +4,9 @@ import com.lifeline.app.database.LifelineDatabase
 import com.lifeline.app.domain.learning.GoalStatus
 import com.lifeline.app.domain.learning.LearningGoal
 import com.lifeline.app.domain.learning.LearningModule
+import com.lifeline.app.utils.getCurrentTimestamp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 class LearningRepositoryImpl(
@@ -84,7 +84,7 @@ class LearningRepositoryImpl(
     
     override suspend fun completeModule(id: String) {
         database.learningQueries.completeLearningModule(
-            completed_at = Clock.System.now().toEpochMilliseconds(),
+            completed_at = getCurrentTimestamp(),
             id = id
         )
     }

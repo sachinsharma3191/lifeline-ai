@@ -20,10 +20,7 @@ kotlin {
         }
     }
     
-    iosArm64()
-    iosSimulatorArm64()
-    
-    // Apply default hierarchy template to create iosMain source set
+    // Apply default hierarchy template
     applyDefaultHierarchyTemplate()
     
     jvm()
@@ -46,37 +43,37 @@ kotlin {
             // Coroutines
             implementation(libs.kotlinx.coroutines.core)
             
-            // DateTime
-            implementation(libs.kotlinx.datetime)
+            // DateTime - use version from catalog and export to dependent modules
+            api(libs.kotlinx.datetime)
             
             // Ktor Client
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             
-            // SQLDelight (excluded from wasmJs - not supported)
-            // Note: SQLDelight doesn't support WASM, so we add it per-target
+            // SQLDelight runtime - needed for all targets except wasm
+            implementation(libs.sqldelight.runtime)
+        }
+        
+        // Configure all source sets to use the experimental datetime API
+        all {
+            languageSettings {
+                optIn("kotlinx.datetime.ExperimentalDateTime")
+                optIn("kotlinx.serialization.ExperimentalSerializationApi")
+            }
+        }
+        
+        // Explicitly configure JS target
+        jsMain.dependencies {
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.ktor.client.js)
+            implementation(libs.sqldelight.runtime)
         }
         
         androidMain.dependencies {
             implementation(libs.ktor.client.android)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.android.driver)
-        }
-        
-        // Configure iOS source set - ios() creates iosMain automatically
-        iosMain.dependencies {
-            implementation(libs.ktor.client.ios)
-            implementation(libs.sqldelight.runtime)
-            implementation(libs.sqldelight.native.driver)
-        }
-        
-        jsMain.dependencies {
-            implementation(libs.ktor.client.js)
-            implementation(libs.sqldelight.runtime)
-            // Try adding sqljs-driver directly - if this fails, JS database support will be disabled
-            // Uncomment the line below if sqljs-driver becomes available:
-            // implementation("app.cash.sqldelight:sqljs-driver:${libs.versions.sqldelight.get()}")
         }
         
         jvmMain.dependencies {
@@ -104,6 +101,9 @@ kotlin {
         }
     }
 }
+
+// No need to exclude kotlinx.datetime since we're using it directly
+// The datetime-wrapper module is no longer required
 
 android {
     namespace = "com.lifeline.app.shared"

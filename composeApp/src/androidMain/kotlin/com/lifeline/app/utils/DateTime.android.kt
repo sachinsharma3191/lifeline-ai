@@ -1,7 +1,7 @@
 package com.lifeline.app.utils
 
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import java.util.Date
 
-actual fun currentTimestamp(): Instant = Clock.System.now()
-
+actual fun currentTimestamp(): Long {
+    return Date().time
+}

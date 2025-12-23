@@ -18,16 +18,7 @@ kotlin {
         }
     }
 
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "ComposeApp"
-            isStatic = true
-        }
-    }
-
+    // iOS targets
     jvm()
 
     js(IR) {
@@ -36,46 +27,52 @@ kotlin {
     }
 
     applyDefaultHierarchyTemplate()
+    
+    // Configure all source sets to use the experimental datetime API
+    sourceSets.all {
+        languageSettings {
+            optIn("kotlinx.datetime.ExperimentalDateTime")
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
+            implementation(compose.material)
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
-
-            // Correct way to call the multiplatform icons library
             implementation(compose.materialIconsExtended)
-
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
-            implementation(libs.androidx.lifecycle.runtimeCompose)
-
-            // Decompose & Extensions (Essential for cross-platform navigation)
-            implementation(libs.decompose)
-            implementation(libs.essenty.lifecycle)
-            // If you have decompose-compose in your libs.versions.toml, use it here:
             // implementation(libs.decompose.compose)
 
-            implementation(projects.shared)
-            implementation(libs.kotlinx.datetime)
+            api(projects.shared)
+            // Add decompose dependencies
+            implementation(libs.decompose)
+            implementation(libs.essenty.lifecycle)
+            implementation(libs.essenty.instance.keeper)
+            implementation(libs.essenty.back.handler)
+        }
+        
+        jsMain.dependencies {
+            // JS-specific dependencies
+            implementation(libs.ktor.client.js)
+            implementation(libs.sqldelight.runtime)
         }
 
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            // kotlinx.datetime provided by shared module's androidMain
         }
 
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            // kotlinx.datetime provided by shared module's jvmMain
         }
 
-        // This is simplified now that hierarchy template is applied
-        jsMain.dependencies {
-            // JS specific UI logic if needed
-        }
+        // jsMain dependencies moved above to commonMain section
     }
 }
 
@@ -109,6 +106,17 @@ android {
 dependencies {
     // Corrected to use the compose plugin helper
     debugImplementation(compose.uiTooling)
+}
+
+// Exclude kotlinx.datetime from JS compilation in composeApp module
+// datetime-wrapper module is the ONLY module that should compile kotlinx.datetime for JS
+// We exclude it from JS compile classpath to prevent duplicate compilation
+// Types are still available through datetime-wrapper's compiled klib
+configurations.matching {
+    it.name.contains("js", ignoreCase = true) &&
+    it.name.contains("compileClasspath", ignoreCase = true)
+}.configureEach {
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlinx-datetime")
 }
 
 compose.desktop {

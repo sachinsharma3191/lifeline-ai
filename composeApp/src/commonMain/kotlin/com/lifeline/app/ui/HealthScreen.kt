@@ -39,6 +39,7 @@ import com.lifeline.app.domain.health.Symptom
 import com.lifeline.app.domain.health.SymptomCategory
 import com.lifeline.app.navigation.HealthComponent
 import com.lifeline.app.utils.currentTimestamp
+import com.lifeline.app.utils.longToInstant
 import com.lifeline.app.utils.randomUUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -224,7 +225,7 @@ fun AddSymptomDialog(
                         id = randomUUID(),
                         name = name,
                         severity = severity,
-                        timestamp = currentTimestamp(),
+                        timestamp = longToInstant(currentTimestamp()),
                         notes = notes.ifEmpty { null },
                         category = category
                     )
