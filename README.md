@@ -47,6 +47,64 @@ It demonstrates a cross-platform app architecture with shared domain logic, pers
 - **Backend server (Ktor)**
   - Basic JSON endpoints under `/api/v1/*`
 
+## Functionality (How to try)
+
+The app is organized into multiple tabs/screens. The main goal is to demonstrate shared business logic + persistence working consistently across platforms.
+
+### Finance
+
+- **Add transaction**
+  - Open Finance
+  - Add a new transaction (amount, description, category)
+  - Verify it appears immediately in the list
+- **Edit transaction**
+  - Tap the edit icon on an existing transaction
+  - Update fields and save
+  - Verify the list updates immediately and persists after restart
+- **Add/Edit goals**
+  - Add a financial goal
+  - Edit it using the edit icon
+
+### Health
+
+- **Add symptom**
+  - Open Health
+  - Add a symptom (name, severity, notes)
+  - Verify it appears immediately
+- **Edit symptom**
+  - Tap the edit icon on a symptom card
+  - Update fields and save
+
+### Learning
+
+- **Add learning goal**
+  - Open Learning
+  - Add a goal
+- **Edit learning goal**
+  - Tap the edit icon on the goal
+  - Update the title/description and save
+
+### Services (Search-only)
+
+- **Search services**
+  - Open Services
+  - The list is hidden until you type a query
+  - Type a query like `Clinic`, `Food`, or `Legal` to see results
+- **Open service details**
+  - Tap any result to open the detail screen
+  - The detail screen shows:
+    - description, category, contact, website
+    - a clickable address
+    - a demo map placeholder
+- **Open address in Google Maps**
+  - Tap the address on the detail screen
+  - This opens a Google Maps search URL in the browser / maps app
+
+### Server
+
+- Start the server with `./gradlew :server:run`
+- The server exposes endpoints under `/api/v1/*` (see `server/src/main/kotlin` for routing)
+
 ### Build and Run Android Application
 
 To build and run the development version of the Android app, use the run configuration from the run
