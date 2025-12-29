@@ -59,6 +59,11 @@ fun HealthScreen(component: HealthComponent) {
     val uiState by viewModel.uiState.collectAsState()
     val symptoms by viewModel.symptoms.collectAsState()
     val timelineEntries by viewModel.timelineEntries.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    var aiPrompt by remember { mutableStateOf("") }
     
     var showAddSymptomDialog by remember { mutableStateOf(false) }
     var symptomToEdit by remember { mutableStateOf<Symptom?>(null) }
@@ -103,6 +108,41 @@ fun HealthScreen(component: HealthComponent) {
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = aiPrompt,
+                onValueChange = { aiPrompt = it },
+                label = { Text("Ask AI (offline)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        if (aiPrompt.isNotBlank()) {
+                            viewModel.askAi(aiPrompt)
+                        }
+                    }
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    if (aiPrompt.isNotBlank()) {
+                        viewModel.askAi(aiPrompt)
+                    }
+                },
+                enabled = aiPrompt.isNotBlank(),
+                modifier = Modifier.align(androidx.compose.ui.Alignment.End)
+            ) {
+                Text("Ask")
             }
             
             uiState.aiResponse?.let { response ->

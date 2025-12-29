@@ -30,6 +30,11 @@ fun LearningScreen(component: LearningComponent) {
     val uiState by viewModel.uiState.collectAsState()
     val goals by viewModel.goals.collectAsState()
     val modules by viewModel.modules.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    var aiPrompt by remember { mutableStateOf("") }
     
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var goalToEdit by remember { mutableStateOf<LearningGoal?>(null) }
@@ -55,6 +60,56 @@ fun LearningScreen(component: LearningComponent) {
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            OutlinedTextField(
+                value = aiPrompt,
+                onValueChange = { aiPrompt = it },
+                label = { Text("Ask AI (offline)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        if (aiPrompt.isNotBlank()) {
+                            viewModel.askAi(aiPrompt)
+                        }
+                    }
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    if (aiPrompt.isNotBlank()) {
+                        viewModel.askAi(aiPrompt)
+                    }
+                },
+                enabled = aiPrompt.isNotBlank(),
+                modifier = Modifier.align(androidx.compose.ui.Alignment.End)
+            ) {
+                Text("Ask")
+            }
+
+            uiState.aiResponse?.let { response ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Text(
+                        text = response,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = "Learning Goals",
                 style = MaterialTheme.typography.titleLarge

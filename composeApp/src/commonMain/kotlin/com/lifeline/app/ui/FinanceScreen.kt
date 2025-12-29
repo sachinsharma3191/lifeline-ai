@@ -40,6 +40,11 @@ fun FinanceScreen(component: FinanceComponent) {
     val transactions by viewModel.transactions.collectAsState()
     val goals by viewModel.goals.collectAsState()
 
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    var aiPrompt by remember { mutableStateOf("") }
+
     var showAddTransactionDialog by remember { mutableStateOf(false) }
     var showAddGoalDialog by remember { mutableStateOf(false) }
 
@@ -97,6 +102,54 @@ fun FinanceScreen(component: FinanceComponent) {
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            OutlinedTextField(
+                value = aiPrompt,
+                onValueChange = { aiPrompt = it },
+                label = { Text("Ask AI (offline)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        if (aiPrompt.isNotBlank()) {
+                            viewModel.askAi(aiPrompt)
+                        }
+                    }
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    if (aiPrompt.isNotBlank()) {
+                        viewModel.askAi(aiPrompt)
+                    }
+                },
+                enabled = aiPrompt.isNotBlank(),
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Ask")
+            }
+
+            uiState.aiResponse?.let { response ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Text(
+                        text = response,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
             }
 
             Text(

@@ -31,6 +31,7 @@ fun ServicesScreen(component: ServicesComponent) {
     val uriHandler = LocalUriHandler.current
     
     var searchQuery by remember { mutableStateOf("") }
+    var aiPrompt by remember { mutableStateOf("") }
     var selectedService by remember { mutableStateOf<CommunityService?>(null) }
     
     if (selectedService != null) {
@@ -78,6 +79,56 @@ fun ServicesScreen(component: ServicesComponent) {
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = aiPrompt,
+                onValueChange = { aiPrompt = it },
+                label = { Text("Ask AI (offline)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                        if (aiPrompt.isNotBlank()) {
+                            viewModel.askAi(aiPrompt)
+                        }
+                    }
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    if (aiPrompt.isNotBlank()) {
+                        viewModel.askAi(aiPrompt)
+                    }
+                },
+                enabled = aiPrompt.isNotBlank(),
+                modifier = Modifier.align(androidx.compose.ui.Alignment.End)
+            ) {
+                Text("Ask")
+            }
+
+            uiState.aiResponse?.let { response ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Text(
+                        text = response,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
