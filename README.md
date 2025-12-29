@@ -9,6 +9,16 @@ LifelineAI is a Kotlin Multiplatform (KMP) + Compose Multiplatform project that 
 
 It demonstrates a cross-platform app architecture with shared domain logic, persistence via SQLDelight, and a simple backend API.
 
+## Purpose
+
+The purpose of LifelineAI is to demonstrate how a single Kotlin Multiplatform codebase can power a cross-platform personal assistant app with **shared persistence**, **shared business logic**, and an **offline AI coach** experience that works out-of-the-box.
+
+This project is designed for demos and judging environments where setup needs to be minimal:
+
+- **Showcase KMP architecture**: shared models, repositories, and ViewModels across Android/Desktop/Web.
+- **Prove real local data flows**: SQLDelight-backed features for Finance, Health, Learning, and Services.
+- **Demo an offline AI coach**: AI responses are generated from local app data and an embedded knowledge base (no internet, no API keys, no model downloads).
+
 ## Project structure
 
 - [/composeApp](./composeApp/src) contains the Compose Multiplatform UI.
