@@ -19,5 +19,6 @@ data class AiResponse(
 enum class AiSource {
     CLOUD,
     LOCAL_NEURAL,
-    RULE_BASED
+    RULE_BASED,
+    OFFLINE_INSIGHTS
 }

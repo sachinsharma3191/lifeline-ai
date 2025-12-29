@@ -79,7 +79,13 @@ class LearningViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, aiResponse = null, error = null) }
             try {
-                val response = aiClient.processRequest(prompt, emptyMap())
+                val response = aiClient.processRequest(
+                    prompt,
+                    mapOf(
+                        "learningGoals" to goals.value,
+                        "learningModules" to modules.value
+                    )
+                )
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 

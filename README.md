@@ -105,6 +105,25 @@ The app is organized into multiple tabs/screens. The main goal is to demonstrate
 - Start the server with `./gradlew :server:run`
 - The server exposes endpoints under `/api/v1/*` (see `server/src/main/kotlin` for routing)
 
+## Offline AI Coach (Demo)
+
+This project includes an **offline AI coach** for demo purposes.
+
+- **No internet required**
+- **No API keys required**
+- Responses are generated from your **current local app data** (SQLDelight data exposed through ViewModels).
+
+The AI layer uses a fallback strategy (Cloud -> Local Neural stub -> Offline Insights -> Rule-based).
+In this repo, Cloud AI is not configured, so the offline layer is what you will typically see.
+
+### Example prompts
+
+- `Finance summary`
+- `What is my top expense category?`
+- `Health trends`
+- `Learning progress`
+- `Services help`
+
 ### Build and Run Android Application
 
 To build and run the development version of the Android app, use the run configuration from the run

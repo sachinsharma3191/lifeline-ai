@@ -37,11 +37,13 @@ class AppContainer(
     // AI Layer
     private val cloudAi: CloudAiClient? = null // Configure when API is available
     private val localNeuralAi: LocalNeuralAiClient = LocalNeuralAiClient()
+    private val offlineInsightsAi: OfflineInsightsAiClient = OfflineInsightsAiClient()
     private val ruleBasedAi: RuleBasedAiClient = RuleBasedAiClient()
     
     val aiClient: AiClient = MultiLayerAiClient(
         cloudAi = cloudAi,
         localNeuralAi = localNeuralAi,
+        offlineInsightsAi = offlineInsightsAi,
         ruleBasedAi = ruleBasedAi
     )
     

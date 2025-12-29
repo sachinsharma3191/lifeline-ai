@@ -84,7 +84,13 @@ class ServicesViewModel(
         scope.launch {
             _uiState.update { it.copy(isLoading = true, aiResponse = null, error = null) }
             try {
-                val response = aiClient.processRequest(prompt, emptyMap())
+                val response = aiClient.processRequest(
+                    prompt,
+                    mapOf(
+                        "services" to services.value,
+                        "searchQuery" to uiState.value.searchQuery
+                    )
+                )
                 _uiState.update { 
                     it.copy(
                         isLoading = false, 
