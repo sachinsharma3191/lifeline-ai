@@ -3,9 +3,11 @@ package com.lifeline.app.ui
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -103,6 +105,33 @@ fun FinanceScreen(component: FinanceComponent) {
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(onClick = {
+                    val p = "Finance summary"
+                    aiPrompt = p
+                    viewModel.askAi(p)
+                }) { Text("Finance summary") }
+
+                TextButton(onClick = {
+                    val p = "Top expense category"
+                    aiPrompt = p
+                    viewModel.askAi(p)
+                }) { Text("Top category") }
+
+                TextButton(onClick = {
+                    val p = "Budget advice"
+                    aiPrompt = p
+                    viewModel.askAi(p)
+                }) { Text("Budget") }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
                 value = aiPrompt,

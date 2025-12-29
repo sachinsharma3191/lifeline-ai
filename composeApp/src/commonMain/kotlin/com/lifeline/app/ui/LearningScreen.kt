@@ -3,9 +3,11 @@ package com.lifeline.app.ui
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -60,6 +62,27 @@ fun LearningScreen(component: LearningComponent) {
                 .padding(padding)
                 .padding(16.dp)
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(onClick = {
+                    val p = "Learning progress"
+                    aiPrompt = p
+                    viewModel.askAi(p)
+                }) { Text("Progress") }
+
+                TextButton(onClick = {
+                    val p = "Study plan"
+                    aiPrompt = p
+                    viewModel.askAi(p)
+                }) { Text("Study plan") }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             OutlinedTextField(
                 value = aiPrompt,
                 onValueChange = { aiPrompt = it },

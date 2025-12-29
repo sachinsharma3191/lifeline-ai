@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.flow
 /**
  * Multi-layer AI client with fallback strategy:
  * 1. Try Cloud AI
- * 2. Try Local Neural AI (if available)
- * 3. Try Offline Insights AI (always available, data-driven)
+ * 2. Try Offline Insights AI (always available, data-driven)
+ * 3. Try Local Neural AI (if available)
  * 4. Fallback to Rule-Based AI (always available)
  */
 class MultiLayerAiClient(
@@ -29,6 +29,13 @@ class MultiLayerAiClient(
             }
         }
         
+        // Always-available offline insights (data-driven)
+        try {
+            return offlineInsightsAi.processRequest(prompt, context)
+        } catch (e: Exception) {
+            // Fall through to next layer
+        }
+
         // Try Local Neural AI
         localNeuralAi?.let { client ->
             if (client.isAvailable()) {
@@ -38,13 +45,6 @@ class MultiLayerAiClient(
                     // Fall through to rule-based
                 }
             }
-        }
-
-        // Always-available offline insights (data-driven)
-        try {
-            return offlineInsightsAi.processRequest(prompt, context)
-        } catch (e: Exception) {
-            // Fall through to rule-based
         }
         
         // Always fallback to rule-based
