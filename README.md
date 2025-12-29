@@ -1,7 +1,17 @@
-This is a Kotlin Multiplatform project targeting Android, Web, Desktop (JVM), and Server.
+# LifelineAI
 
-* [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform
-  applications.
+LifelineAI is a Kotlin Multiplatform (KMP) + Compose Multiplatform project that targets:
+
+- Android
+- Desktop (JVM)
+- Web (Kotlin/JS)
+- Server (Ktor)
+
+It demonstrates a cross-platform app architecture with shared domain logic, persistence via SQLDelight, and a simple backend API.
+
+## Project structure
+
+- [/composeApp](./composeApp/src) contains the Compose Multiplatform UI.
   It contains several subfolders:
     - [commonMain](./composeApp/src/commonMain/kotlin) is for code that's common for all targets.
     - Other folders are for Kotlin code that will be compiled for only the platform indicated in the
@@ -10,11 +20,32 @@ This is a Kotlin Multiplatform project targeting Android, Web, Desktop (JVM), an
       the [jvmMain](./composeApp/src/jvmMain/kotlin)
       folder is the appropriate location.
 
-* [/server](./server/src/main/kotlin) is for the Ktor server application.
+- [/server](./server/src/main/kotlin) is a Ktor server application (API).
 
-* [/shared](./shared/src) is for the code that will be shared between all targets in the project.
+- [/shared](./shared/src) contains shared code used by all targets:
+  - domain models
+  - repositories
+  - view models
+  - SQLDelight database schema and queries
   The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
   can add code to the platform-specific folders here too.
+
+## Features
+
+- **Shared persistence** using SQLDelight
+  - Finance: transactions + financial goals
+  - Health: symptoms
+  - Learning: goals
+  - Services: community services
+- **CRUD UI (Android + Desktop)**
+  - Add and edit entries for Finance/Health/Learning
+- **Services search + detail view**
+  - Search-only list (hidden until you type)
+  - Click a service to open a detail screen
+  - Click the address to open a Google Maps search link
+  - Demo map placeholder on the detail screen
+- **Backend server (Ktor)**
+  - Basic JSON endpoints under `/api/v1/*`
 
 ### Build and Run Android Application
 
@@ -25,6 +56,10 @@ in your IDE’s toolbar or build it directly from the terminal:
 - on macOS/Linux
   ```shell
   ./gradlew :composeApp:assembleDebug
+  ```
+  To install directly to a running emulator/device:
+  ```shell
+  ./gradlew :composeApp:installDebug
   ```
 - on Windows
   ```shell
@@ -67,16 +102,7 @@ To build and run the development version of the web app, use the run configurati
 widget
 in your IDE's toolbar or run it directly from the terminal:
 
-- for the Wasm target (faster, modern browsers):
-    - on macOS/Linux
-      ```shell
-      ./gradlew :composeApp:wasmJsBrowserDevelopmentRun
-      ```
-    - on Windows
-      ```shell
-      .\gradlew.bat :composeApp:wasmJsBrowserDevelopmentRun
-      ```
-- for the JS target (slower, supports older browsers):
+- JS target:
     - on macOS/Linux
       ```shell
       ./gradlew :composeApp:jsBrowserDevelopmentRun
@@ -85,6 +111,8 @@ in your IDE's toolbar or run it directly from the terminal:
       ```shell
       .\gradlew.bat :composeApp:jsBrowserDevelopmentRun
       ```
+
+Note: the Wasm target/task is not enabled by default in this repo.
 
 ---
 
@@ -107,6 +135,18 @@ in your IDE's toolbar or run it directly from the terminal:
 ./gradlew :server:run
 ```
 Server will start on http://localhost:8080
+
+To run the server on a different port:
+
+```shell
+./gradlew :server:run -Dserver.port=9090
+```
+
+Or:
+
+```shell
+PORT=9090 ./gradlew :server:run
+```
 
 **Desktop Application:**
 ```shell

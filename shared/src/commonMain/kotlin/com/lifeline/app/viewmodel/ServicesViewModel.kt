@@ -64,6 +64,21 @@ class ServicesViewModel(
             }
         }
     }
+
+    fun updateService(service: CommunityService) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                repository.updateService(service)
+                _services.update { current ->
+                    current.map { if (it.id == service.id) service else it }
+                }
+                _uiState.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
     
     fun askAi(prompt: String) {
         scope.launch {

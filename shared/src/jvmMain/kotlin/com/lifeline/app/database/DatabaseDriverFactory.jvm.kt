@@ -3,17 +3,33 @@ package com.lifeline.app.database
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.asJdbcDriver
 import org.sqlite.SQLiteDataSource
-import javax.sql.DataSource
 
 actual class DatabaseDriverFactory {
     actual fun createDriver(): SqlDriver {
-        // Create a DataSource for SQLite in-memory database
+        val dbPath = System.getProperty("lifeline.db.path")
+            ?: System.getenv("LIFELINE_DB_PATH")
+            ?: "./lifeline.db"
+
         val dataSource = SQLiteDataSource().apply {
-            url = "jdbc:sqlite::memory:"
+            url = "jdbc:sqlite:$dbPath"
         }
-        // Use the extension function to create a JdbcDriver from a DataSource
-        val driver = dataSource.asJdbcDriver()
-        LifelineDatabase.Schema.create(driver)
+
+        val driver: SqlDriver = dataSource.asJdbcDriver()
+
+        val hasSchema = driver
+            .executeQuery(
+                identifier = null,
+                sql = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='financial_transaction' LIMIT 1",
+                mapper = { cursor -> cursor.next() },
+                parameters = 0
+            )
+            .value
+            .run { this == true }
+
+        if (!hasSchema) {
+            LifelineDatabase.Schema.create(driver)
+        }
+
         return driver
     }
 }

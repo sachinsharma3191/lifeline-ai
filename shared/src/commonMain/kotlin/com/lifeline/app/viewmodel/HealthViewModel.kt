@@ -32,6 +32,28 @@ class HealthViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 repository.addSymptom(symptom)
+                _symptoms.update { current ->
+                    (listOf(symptom) + current)
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.timestamp }
+                }
+                _uiState.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    fun updateSymptom(symptom: Symptom) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                repository.updateSymptom(symptom)
+                _symptoms.update { current ->
+                    current
+                        .map { if (it.id == symptom.id) symptom else it }
+                        .sortedByDescending { it.timestamp }
+                }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
@@ -44,6 +66,11 @@ class HealthViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 repository.addTimelineEntry(entry)
+                _timelineEntries.update { current ->
+                    (listOf(entry) + current)
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.timestamp }
+                }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }

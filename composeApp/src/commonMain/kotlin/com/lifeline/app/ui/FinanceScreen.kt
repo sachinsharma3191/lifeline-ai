@@ -1,16 +1,25 @@
 package com.lifeline.app.ui
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.finance.FinancialGoal
@@ -33,6 +42,9 @@ fun FinanceScreen(component: FinanceComponent) {
 
     var showAddTransactionDialog by remember { mutableStateOf(false) }
     var showAddGoalDialog by remember { mutableStateOf(false) }
+
+    var transactionToEdit by remember { mutableStateOf<Transaction?>(null) }
+    var goalToEdit by remember { mutableStateOf<FinancialGoal?>(null) }
 
     Scaffold(
         topBar = {
@@ -71,6 +83,22 @@ fun FinanceScreen(component: FinanceComponent) {
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
 
+            uiState.error?.let { error ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = error,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Text(
                 text = "Financial Goals",
                 style = MaterialTheme.typography.titleLarge
@@ -78,10 +106,16 @@ fun FinanceScreen(component: FinanceComponent) {
             Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(goals) { goal ->
-                    GoalCard(goal)
+                    GoalCard(
+                        goal = goal,
+                        onEdit = { goalToEdit = it }
+                    )
                 }
             }
 
@@ -94,10 +128,16 @@ fun FinanceScreen(component: FinanceComponent) {
             Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(transactions.take(10)) { transaction ->
-                    TransactionCard(transaction)
+                    TransactionCard(
+                        transaction = transaction,
+                        onEdit = { transactionToEdit = it }
+                    )
                 }
             }
         }
@@ -122,10 +162,32 @@ fun FinanceScreen(component: FinanceComponent) {
             }
         )
     }
+
+    transactionToEdit?.let { existing ->
+        EditTransactionDialog(
+            transaction = existing,
+            onDismiss = { transactionToEdit = null },
+            onSave = { updated ->
+                viewModel.updateTransaction(updated)
+                transactionToEdit = null
+            }
+        )
+    }
+
+    goalToEdit?.let { existing ->
+        EditGoalDialog(
+            goal = existing,
+            onDismiss = { goalToEdit = null },
+            onSave = { updated ->
+                viewModel.updateGoal(updated)
+                goalToEdit = null
+            }
+        )
+    }
 }
 
 @Composable
-fun TransactionCard(transaction: Transaction) {
+fun TransactionCard(transaction: Transaction, onEdit: (Transaction) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -153,20 +215,32 @@ fun TransactionCard(transaction: Transaction) {
                 else
                     MaterialTheme.colorScheme.primary
             )
+
+            IconButton(onClick = { onEdit(transaction) }) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit")
+            }
         }
     }
 }
 
 @Composable
-fun GoalCard(goal: FinancialGoal) {
+fun GoalCard(goal: FinancialGoal, onEdit: (FinancialGoal) -> Unit) {
     val progress = (goal.currentAmount / goal.targetAmount).toFloat().coerceIn(0f, 1f)
 
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = goal.name,
-                style = MaterialTheme.typography.titleMedium
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = goal.name,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                IconButton(onClick = { onEdit(goal) }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                }
+            }
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
                 progress = progress.toFloat(),
@@ -191,6 +265,10 @@ fun AddTransactionDialog(
     var category by remember { mutableStateOf("") }
     var type by remember { mutableStateOf(TransactionType.EXPENSE) }
 
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val addButtonFocusRequester = remember { FocusRequester() }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Transaction") },
@@ -200,18 +278,31 @@ fun AddTransactionDialog(
                     value = amount,
                     onValueChange = { amount = it },
                     label = { Text("Amount") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = category,
                     onValueChange = { category = it },
                     label = { Text("Category") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Description") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            addButtonFocusRequester.requestFocus()
+                        }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -229,9 +320,170 @@ fun AddTransactionDialog(
                     )
                     onAdd(transaction)
                 },
-                enabled = amount.toDoubleOrNull() != null && category.isNotBlank()
+                enabled = amount.toDoubleOrNull() != null && category.isNotBlank(),
+                modifier = Modifier
+                    .focusRequester(addButtonFocusRequester)
+                    .focusable()
             ) {
                 Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditTransactionDialog(
+    transaction: Transaction,
+    onDismiss: () -> Unit,
+    onSave: (Transaction) -> Unit
+) {
+    var amount by remember { mutableStateOf(transaction.amount.toString()) }
+    var description by remember { mutableStateOf(transaction.description.orEmpty()) }
+    var category by remember { mutableStateOf(transaction.category) }
+    var type by remember { mutableStateOf(transaction.type) }
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val saveButtonFocusRequester = remember { FocusRequester() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Transaction") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Amount") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Category") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            saveButtonFocusRequester.requestFocus()
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val updated = transaction.copy(
+                        amount = amount.toDoubleOrNull() ?: transaction.amount,
+                        category = category,
+                        description = description.ifBlank { null },
+                        type = type
+                    )
+                    onSave(updated)
+                },
+                enabled = amount.toDoubleOrNull() != null && category.isNotBlank(),
+                modifier = Modifier
+                    .focusRequester(saveButtonFocusRequester)
+                    .focusable()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditGoalDialog(
+    goal: FinancialGoal,
+    onDismiss: () -> Unit,
+    onSave: (FinancialGoal) -> Unit
+) {
+    var name by remember { mutableStateOf(goal.name) }
+    var targetAmount by remember { mutableStateOf(goal.targetAmount.toString()) }
+    var category by remember { mutableStateOf(goal.category) }
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val saveButtonFocusRequester = remember { FocusRequester() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Financial Goal") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Goal Name") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = targetAmount,
+                    onValueChange = { targetAmount = it },
+                    label = { Text("Target Amount") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Category") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            saveButtonFocusRequester.requestFocus()
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val updated = goal.copy(
+                        name = name,
+                        targetAmount = targetAmount.toDoubleOrNull() ?: goal.targetAmount,
+                        category = category
+                    )
+                    onSave(updated)
+                },
+                enabled = name.isNotBlank() && targetAmount.toDoubleOrNull() != null,
+                modifier = Modifier
+                    .focusRequester(saveButtonFocusRequester)
+                    .focusable()
+            ) {
+                Text("Save")
             }
         },
         dismissButton = {
@@ -251,6 +503,10 @@ fun AddGoalDialog(
     var targetAmount by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
 
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val addButtonFocusRequester = remember { FocusRequester() }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Financial Goal") },
@@ -260,18 +516,31 @@ fun AddGoalDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Goal Name") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = targetAmount,
                     onValueChange = { targetAmount = it },
                     label = { Text("Target Amount") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Next
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
                     value = category,
                     onValueChange = { category = it },
                     label = { Text("Category") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            addButtonFocusRequester.requestFocus()
+                        }
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -289,7 +558,10 @@ fun AddGoalDialog(
                     )
                     onAdd(goal)
                 },
-                enabled = name.isNotBlank() && targetAmount.toDoubleOrNull() != null
+                enabled = name.isNotBlank() && targetAmount.toDoubleOrNull() != null,
+                modifier = Modifier
+                    .focusRequester(addButtonFocusRequester)
+                    .focusable()
             ) {
                 Text("Add")
             }

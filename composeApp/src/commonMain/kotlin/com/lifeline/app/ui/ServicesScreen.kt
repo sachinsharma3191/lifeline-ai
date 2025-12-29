@@ -1,11 +1,20 @@
 package com.lifeline.app.ui
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.services.CommunityService
 import com.lifeline.app.navigation.ServicesComponent
@@ -16,9 +25,27 @@ fun ServicesScreen(component: ServicesComponent) {
     val viewModel = component.viewModel
     val uiState by viewModel.uiState.collectAsState()
     val services by viewModel.services.collectAsState()
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val uriHandler = LocalUriHandler.current
     
     var searchQuery by remember { mutableStateOf("") }
+    var selectedService by remember { mutableStateOf<CommunityService?>(null) }
     
+    if (selectedService != null) {
+        ServiceDetailScreen(
+            service = selectedService!!,
+            onBack = { selectedService = null },
+            onOpenMaps = { address ->
+                val url = "https://www.google.com/maps/search/?api=1&query=" +
+                    address.replace(" ", "+")
+                uriHandler.openUri(url)
+            }
+        )
+        return
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -42,16 +69,34 @@ fun ServicesScreen(component: ServicesComponent) {
                     viewModel.searchServices(it)
                 },
                 label = { Text("Search services...") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(services) { service ->
-                    ServiceCard(service)
+
+            if (searchQuery.isBlank()) {
+                Text(
+                    text = "Search to see services",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(services) { service ->
+                        ServiceCard(
+                            service = service,
+                            onClick = { selectedService = service }
+                        )
+                    }
                 }
             }
         }
@@ -59,8 +104,12 @@ fun ServicesScreen(component: ServicesComponent) {
 }
 
 @Composable
-fun ServiceCard(service: CommunityService) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+fun ServiceCard(service: CommunityService, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = service.name,
@@ -82,6 +131,89 @@ fun ServiceCard(service: CommunityService) {
                     text = "📍 $location",
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ServiceDetailScreen(
+    service: CommunityService,
+    onBack: () -> Unit,
+    onOpenMaps: (String) -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(service.name) },
+                navigationIcon = {
+                    TextButton(onClick = onBack) {
+                        Text("Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = service.description,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Text(
+                text = "Category: ${service.category.name}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            service.location?.let { address ->
+                Text(
+                    text = address,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        textDecoration = TextDecoration.Underline,
+                        fontSize = 16.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { onOpenMaps(address) }
+                )
+            }
+
+            service.contactInfo?.let {
+                Text(text = "Contact: $it", style = MaterialTheme.typography.bodySmall)
+            }
+            service.website?.let {
+                Text(text = "Website: $it", style = MaterialTheme.typography.bodySmall)
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Map (demo)",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                    ) {
+                        Text(
+                            text = "[Dummy Google Map Placeholder]",
+                            modifier = Modifier.padding(12.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

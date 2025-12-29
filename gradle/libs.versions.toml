@@ -46,6 +46,7 @@ ktor-client-ios = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" 
 ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktor-client-jvm = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
 sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-native-driver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
 sqldelight-sqljs-driver = { module = "app.cash.sqldelight:sqljs-driver", version.ref = "sqldelight" }

@@ -4,8 +4,11 @@ import com.lifeline.app.database.LifelineDatabase
 import com.lifeline.app.domain.health.HealthTimelineEntry
 import com.lifeline.app.domain.health.Symptom
 import com.lifeline.app.domain.health.SymptomCategory
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
 
 class HealthRepositoryImpl(
@@ -22,23 +25,38 @@ class HealthRepositoryImpl(
             category = symptom.category.name
         )
     }
+
+    override suspend fun updateSymptom(symptom: Symptom) {
+        database.healthQueries.updateSymptom(
+            name = symptom.name,
+            severity = symptom.severity.toLong(),
+            timestamp = symptom.timestamp.toEpochMilliseconds(),
+            notes = symptom.notes,
+            category = symptom.category.name,
+            id = symptom.id
+        )
+    }
     
-    override suspend fun getSymptoms(startDate: Instant?, endDate: Instant?): Flow<List<Symptom>> = flow {
+    override suspend fun getSymptoms(startDate: Instant?, endDate: Instant?): Flow<List<Symptom>> {
         val startTimestamp = startDate?.toEpochMilliseconds()
         val endTimestamp = endDate?.toEpochMilliseconds()
-        
-        val rows = database.healthQueries.getAllSymptoms(startTimestamp, endTimestamp).executeAsList()
-        val symptoms = rows.map { row ->
-            Symptom(
-                id = row.id,
-                name = row.name,
-                severity = row.severity.toInt(),
-                timestamp = Instant.fromEpochMilliseconds(row.timestamp),
-                notes = row.notes,
-                category = SymptomCategory.valueOf(row.category)
-            )
-        }
-        emit(symptoms)
+
+        return database.healthQueries
+            .getAllSymptoms(startTimestamp, endTimestamp)
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows ->
+                rows.map { row ->
+                    Symptom(
+                        id = row.id,
+                        name = row.name,
+                        severity = row.severity.toInt(),
+                        timestamp = Instant.fromEpochMilliseconds(row.timestamp),
+                        notes = row.notes,
+                        category = SymptomCategory.valueOf(row.category)
+                    )
+                }
+            }
     }
     
     override suspend fun addTimelineEntry(entry: HealthTimelineEntry) {
@@ -57,33 +75,38 @@ class HealthRepositoryImpl(
         }
     }
     
-    override suspend fun getTimelineEntries(startDate: Instant?, endDate: Instant?): Flow<List<HealthTimelineEntry>> = flow {
+    override suspend fun getTimelineEntries(startDate: Instant?, endDate: Instant?): Flow<List<HealthTimelineEntry>> {
         val startTimestamp = startDate?.toEpochMilliseconds()
         val endTimestamp = endDate?.toEpochMilliseconds()
-        
-        val rows = database.healthQueries.getAllTimelineEntries(startTimestamp, endTimestamp).executeAsList()
-        val entries = rows.map { row ->
-            // Get symptoms for this timeline entry
-            val symptomRows = database.healthQueries.getSymptomsForTimelineEntry(row.id).executeAsList()
-            val symptoms = symptomRows.map { symptomRow ->
-                Symptom(
-                    id = symptomRow.id,
-                    name = symptomRow.name,
-                    severity = symptomRow.severity.toInt(),
-                    timestamp = Instant.fromEpochMilliseconds(symptomRow.timestamp),
-                    notes = symptomRow.notes,
-                    category = SymptomCategory.valueOf(symptomRow.category)
-                )
+
+        return database.healthQueries
+            .getAllTimelineEntries(startTimestamp, endTimestamp)
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows ->
+                rows.map { row ->
+                    val symptomRows = database.healthQueries
+                        .getSymptomsForTimelineEntry(row.id)
+                        .executeAsList()
+                    val symptoms = symptomRows.map { symptomRow ->
+                        Symptom(
+                            id = symptomRow.id,
+                            name = symptomRow.name,
+                            severity = symptomRow.severity.toInt(),
+                            timestamp = Instant.fromEpochMilliseconds(symptomRow.timestamp),
+                            notes = symptomRow.notes,
+                            category = SymptomCategory.valueOf(symptomRow.category)
+                        )
+                    }
+
+                    HealthTimelineEntry(
+                        id = row.id,
+                        timestamp = Instant.fromEpochMilliseconds(row.timestamp),
+                        symptoms = symptoms,
+                        notes = row.notes
+                    )
+                }
             }
-            
-            HealthTimelineEntry(
-                id = row.id,
-                timestamp = Instant.fromEpochMilliseconds(row.timestamp),
-                symptoms = symptoms,
-                notes = row.notes
-            )
-        }
-        emit(entries)
     }
     
     override suspend fun deleteSymptom(id: String) {

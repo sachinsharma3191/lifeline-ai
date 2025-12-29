@@ -1,13 +1,22 @@
 package com.lifeline.app.ui
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.learning.LearningGoal
 import com.lifeline.app.domain.learning.LearningModule
@@ -23,6 +32,7 @@ fun LearningScreen(component: LearningComponent) {
     val modules by viewModel.modules.collectAsState()
     
     var showAddGoalDialog by remember { mutableStateOf(false) }
+    var goalToEdit by remember { mutableStateOf<LearningGoal?>(null) }
     
     Scaffold(
         topBar = {
@@ -55,7 +65,10 @@ fun LearningScreen(component: LearningComponent) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(goals) { goal ->
-                    LearningGoalCard(goal)
+                    LearningGoalCard(
+                        goal = goal,
+                        onEdit = { goalToEdit = it }
+                    )
                 }
             }
             
@@ -88,16 +101,35 @@ fun LearningScreen(component: LearningComponent) {
             }
         )
     }
+
+    goalToEdit?.let { existing ->
+        EditLearningGoalDialog(
+            goal = existing,
+            onDismiss = { goalToEdit = null },
+            onSave = { updated ->
+                viewModel.updateGoal(updated)
+                goalToEdit = null
+            }
+        )
+    }
 }
 
 @Composable
-fun LearningGoalCard(goal: LearningGoal) {
+fun LearningGoalCard(goal: LearningGoal, onEdit: (LearningGoal) -> Unit) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = goal.title,
-                style = MaterialTheme.typography.titleMedium
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = goal.title,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                IconButton(onClick = { onEdit(goal) }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit")
+                }
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = goal.description,
@@ -162,6 +194,10 @@ fun AddLearningGoalDialog(
 ) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val addButtonFocusRequester = remember { FocusRequester() }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -172,6 +208,7 @@ fun AddLearningGoalDialog(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("Title") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedTextField(
@@ -179,6 +216,14 @@ fun AddLearningGoalDialog(
                     onValueChange = { description = it },
                     label = { Text("Description") },
                     modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            addButtonFocusRequester.requestFocus()
+                        }
+                    ),
                     maxLines = 3
                 )
             }
@@ -196,9 +241,80 @@ fun AddLearningGoalDialog(
                     )
                     onAdd(goal)
                 },
-                enabled = title.isNotBlank() && description.isNotBlank()
+                enabled = title.isNotBlank() && description.isNotBlank(),
+                modifier = Modifier
+                    .focusRequester(addButtonFocusRequester)
+                    .focusable()
             ) {
                 Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditLearningGoalDialog(
+    goal: LearningGoal,
+    onDismiss: () -> Unit,
+    onSave: (LearningGoal) -> Unit
+) {
+    var title by remember { mutableStateOf(goal.title) }
+    var description by remember { mutableStateOf(goal.description) }
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val saveButtonFocusRequester = remember { FocusRequester() }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Edit Learning Goal") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Title") },
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            keyboardController?.hide()
+                            saveButtonFocusRequester.requestFocus()
+                        }
+                    ),
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSave(
+                        goal.copy(
+                            title = title,
+                            description = description
+                        )
+                    )
+                },
+                enabled = title.isNotBlank() && description.isNotBlank(),
+                modifier = Modifier
+                    .focusRequester(saveButtonFocusRequester)
+                    .focusable()
+            ) {
+                Text("Save")
             }
         },
         dismissButton = {

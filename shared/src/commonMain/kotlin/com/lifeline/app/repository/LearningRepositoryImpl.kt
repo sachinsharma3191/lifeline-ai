@@ -5,8 +5,11 @@ import com.lifeline.app.domain.learning.GoalStatus
 import com.lifeline.app.domain.learning.LearningGoal
 import com.lifeline.app.domain.learning.LearningModule
 import com.lifeline.app.utils.getCurrentTimestamp
+import app.cash.sqldelight.coroutines.asFlow
+import app.cash.sqldelight.coroutines.mapToList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
 
 class LearningRepositoryImpl(
@@ -24,19 +27,23 @@ class LearningRepositoryImpl(
         )
     }
     
-    override suspend fun getGoals(): Flow<List<LearningGoal>> = flow {
-        val rows = database.learningQueries.getAllLearningGoals().executeAsList()
-        val goals = rows.map { row ->
-            LearningGoal(
-                id = row.id,
-                title = row.title,
-                description = row.description,
-                targetDate = row.target_date?.let { Instant.fromEpochMilliseconds(it) },
-                progress = row.progress.toFloat(),
-                status = GoalStatus.valueOf(row.status)
-            )
-        }
-        emit(goals)
+    override suspend fun getGoals(): Flow<List<LearningGoal>> {
+        return database.learningQueries
+            .getAllLearningGoals()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows ->
+                rows.map { row ->
+                    LearningGoal(
+                        id = row.id,
+                        title = row.title,
+                        description = row.description,
+                        targetDate = row.target_date?.let { Instant.fromEpochMilliseconds(it) },
+                        progress = row.progress.toFloat(),
+                        status = GoalStatus.valueOf(row.status)
+                    )
+                }
+            }
     }
     
     override suspend fun updateGoal(goal: LearningGoal) {
@@ -66,20 +73,24 @@ class LearningRepositoryImpl(
         )
     }
     
-    override suspend fun getModules(): Flow<List<LearningModule>> = flow {
-        val rows = database.learningQueries.getAllLearningModules().executeAsList()
-        val modules = rows.map { row ->
-            LearningModule(
-                id = row.id,
-                title = row.title,
-                description = row.description,
-                content = row.content,
-                estimatedDuration = row.estimated_duration.toInt(),
-                completed = row.completed == 1L,
-                completedAt = row.completed_at?.let { Instant.fromEpochMilliseconds(it) }
-            )
-        }
-        emit(modules)
+    override suspend fun getModules(): Flow<List<LearningModule>> {
+        return database.learningQueries
+            .getAllLearningModules()
+            .asFlow()
+            .mapToList(Dispatchers.Default)
+            .map { rows ->
+                rows.map { row ->
+                    LearningModule(
+                        id = row.id,
+                        title = row.title,
+                        description = row.description,
+                        content = row.content,
+                        estimatedDuration = row.estimated_duration.toInt(),
+                        completed = row.completed == 1L,
+                        completedAt = row.completed_at?.let { Instant.fromEpochMilliseconds(it) }
+                    )
+                }
+            }
     }
     
     override suspend fun completeModule(id: String) {

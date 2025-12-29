@@ -34,6 +34,11 @@ ORDER BY timestamp DESC;
 deleteSymptom:
 DELETE FROM symptom WHERE id = ?;
 
+updateSymptom:
+UPDATE symptom
+SET name = ?, severity = ?, timestamp = ?, notes = ?, category = ?
+WHERE id = ?;
+
 insertTimelineEntry:
 INSERT INTO health_timeline_entry(id, timestamp, notes)
 VALUES (?, ?, ?);

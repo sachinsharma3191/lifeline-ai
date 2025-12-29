@@ -32,6 +32,28 @@ class MoneyViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 repository.addTransaction(transaction)
+                _transactions.update { current ->
+                    (listOf(transaction) + current)
+                        .distinctBy { it.id }
+                        .sortedByDescending { it.timestamp }
+                }
+                _uiState.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    fun updateTransaction(transaction: Transaction) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                repository.updateTransaction(transaction)
+                _transactions.update { current ->
+                    current
+                        .map { if (it.id == transaction.id) transaction else it }
+                        .sortedByDescending { it.timestamp }
+                }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
@@ -44,6 +66,10 @@ class MoneyViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 repository.addGoal(goal)
+                _goals.update { current ->
+                    (listOf(goal) + current)
+                        .distinctBy { it.id }
+                }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
@@ -56,6 +82,9 @@ class MoneyViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 repository.updateGoal(goal)
+                _goals.update { current ->
+                    current.map { if (it.id == goal.id) goal else it }
+                }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }

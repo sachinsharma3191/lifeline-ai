@@ -32,6 +32,25 @@ class LearningViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 repository.addGoal(goal)
+                _goals.update { current ->
+                    (listOf(goal) + current)
+                        .distinctBy { it.id }
+                }
+                _uiState.update { it.copy(isLoading = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    fun updateGoal(goal: LearningGoal) {
+        scope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                repository.updateGoal(goal)
+                _goals.update { current ->
+                    current.map { if (it.id == goal.id) goal else it }
+                }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
@@ -44,6 +63,11 @@ class LearningViewModel(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 repository.completeModule(id)
+                _modules.update { current ->
+                    current.map { module ->
+                        if (module.id == id) module.copy(completed = true) else module
+                    }
+                }
                 _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }

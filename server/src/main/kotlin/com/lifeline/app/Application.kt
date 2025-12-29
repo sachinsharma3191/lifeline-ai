@@ -17,7 +17,11 @@ import kotlinx.coroutines.flow.first
 const val SERVER_PORT = 8080
 
 fun main() {
-    embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
+    val port = System.getProperty("server.port")?.toIntOrNull()
+        ?: System.getenv("PORT")?.toIntOrNull()
+        ?: SERVER_PORT
+
+    embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::module)
         .start(wait = true)
 }
 

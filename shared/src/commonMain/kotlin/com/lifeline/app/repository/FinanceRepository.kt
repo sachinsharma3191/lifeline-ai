@@ -7,6 +7,7 @@ import kotlinx.datetime.Instant
 
 interface FinanceRepository {
     suspend fun addTransaction(transaction: Transaction)
+    suspend fun updateTransaction(transaction: Transaction)
     suspend fun getTransactions(startDate: Instant?, endDate: Instant?): Flow<List<Transaction>>
     suspend fun addGoal(goal: FinancialGoal)
     suspend fun getGoals(): Flow<List<FinancialGoal>>

@@ -13,6 +13,9 @@ insertCommunityService:
 INSERT INTO community_service(id, name, description, category, location, contact_info, website, available)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
+countServices:
+SELECT COUNT(*) FROM community_service;
+
 getAllCommunityServices:
 SELECT * FROM community_service
 WHERE (?1 IS NULL OR category = ?1)

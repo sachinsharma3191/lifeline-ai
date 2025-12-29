@@ -30,6 +30,11 @@ ORDER BY timestamp DESC;
 deleteTransaction:
 DELETE FROM financial_transaction WHERE id = ?;
 
+updateTransaction:
+UPDATE financial_transaction
+SET amount = ?, type = ?, category = ?, timestamp = ?, description = ?, tags = ?
+WHERE id = ?;
+
 insertFinancialGoal:
 INSERT INTO financial_goal(id, name, target_amount, current_amount, deadline, category)
 VALUES (?, ?, ?, ?, ?, ?);

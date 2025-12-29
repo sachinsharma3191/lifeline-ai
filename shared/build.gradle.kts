@@ -53,6 +53,8 @@ kotlin {
             
             // SQLDelight runtime - needed for all targets except wasm
             implementation(libs.sqldelight.runtime)
+
+            implementation(libs.sqldelight.coroutines.extensions)
         }
         
         // Configure all source sets to use the experimental datetime API
