@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.lifeline.app.config.AppConfigLoader
 import com.lifeline.app.domain.health.Symptom
 import com.lifeline.app.domain.health.SymptomCategory
 import com.lifeline.app.navigation.HealthComponent
@@ -58,6 +59,10 @@ import com.lifeline.app.utils.randomUUID
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HealthScreen(component: HealthComponent) {
+    val config = remember { AppConfigLoader.get() }
+    val screen = config.screens.health
+    val symptomsSection = screen.sections.getValue("symptoms")
+
     val viewModel = component.viewModel
     val uiState by viewModel.uiState.collectAsState()
     val symptoms by viewModel.symptoms.collectAsState()
@@ -74,7 +79,7 @@ fun HealthScreen(component: HealthComponent) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Health") },
+                title = { Text(screen.title) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -121,17 +126,12 @@ fun HealthScreen(component: HealthComponent) {
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(onClick = {
-                    val p = "Health trends"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Health trends") }
-
-                TextButton(onClick = {
-                    val p = "Symptom summary"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Symptoms") }
+                screen.aiSuggestions.forEach { suggestion ->
+                    TextButton(onClick = {
+                        aiPrompt = suggestion.prompt
+                        viewModel.askAi(suggestion.prompt)
+                    }) { Text(suggestion.label) }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -139,7 +139,7 @@ fun HealthScreen(component: HealthComponent) {
             OutlinedTextField(
                 value = aiPrompt,
                 onValueChange = { aiPrompt = it },
-                label = { Text("Ask AI (offline)") },
+                label = { Text(screen.aiCoachLabel) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
@@ -186,7 +186,7 @@ fun HealthScreen(component: HealthComponent) {
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Recent Symptoms",
+                text = symptomsSection.title,
                 style = MaterialTheme.typography.titleLarge
             )
             
@@ -195,7 +195,7 @@ fun HealthScreen(component: HealthComponent) {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(symptoms.take(10)) { symptom ->
+                items(symptoms.take(symptomsSection.listLimit ?: 10)) { symptom ->
                     SymptomCard(
                         symptom = symptom,
                         onEdit = { symptomToEdit = it }

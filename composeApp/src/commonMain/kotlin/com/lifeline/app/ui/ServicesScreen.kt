@@ -18,12 +18,17 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
+import com.lifeline.app.config.AppConfigLoader
+import com.lifeline.app.config.mapsUrl
 import com.lifeline.app.domain.services.CommunityService
 import com.lifeline.app.navigation.ServicesComponent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ServicesScreen(component: ServicesComponent) {
+    val config = remember { AppConfigLoader.get() }
+    val screen = config.screens.services
+
     val viewModel = component.viewModel
     val uiState by viewModel.uiState.collectAsState()
     val services by viewModel.services.collectAsState()
@@ -39,11 +44,10 @@ fun ServicesScreen(component: ServicesComponent) {
     if (selectedService != null) {
         ServiceDetailScreen(
             service = selectedService!!,
+            detailConfig = screen.detail,
             onBack = { selectedService = null },
             onOpenMaps = { address ->
-                val url = "https://www.google.com/maps/search/?api=1&query=" +
-                    address.replace(" ", "+")
-                uriHandler.openUri(url)
+                uriHandler.openUri(mapsUrl(config.servicesCatalog.mapsUrlTemplate, address))
             }
         )
         return
@@ -52,7 +56,7 @@ fun ServicesScreen(component: ServicesComponent) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Community Services") },
+                title = { Text(screen.title) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -71,7 +75,7 @@ fun ServicesScreen(component: ServicesComponent) {
                     searchQuery = it
                     viewModel.searchServices(it)
                 },
-                label = { Text("Search services...") },
+                label = { Text(screen.searchPlaceholder) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
                     onDone = {
@@ -90,17 +94,12 @@ fun ServicesScreen(component: ServicesComponent) {
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(onClick = {
-                    val p = "Services help"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Services help") }
-
-                TextButton(onClick = {
-                    val p = "Community help"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Community") }
+                screen.aiSuggestions.forEach { suggestion ->
+                    TextButton(onClick = {
+                        aiPrompt = suggestion.prompt
+                        viewModel.askAi(suggestion.prompt)
+                    }) { Text(suggestion.label) }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -108,7 +107,7 @@ fun ServicesScreen(component: ServicesComponent) {
             OutlinedTextField(
                 value = aiPrompt,
                 onValueChange = { aiPrompt = it },
-                label = { Text("Ask AI (offline)") },
+                label = { Text(screen.aiCoachLabel) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
@@ -157,7 +156,7 @@ fun ServicesScreen(component: ServicesComponent) {
 
             if (searchQuery.isBlank()) {
                 Text(
-                    text = "Search to see services",
+                    text = screen.searchEmptyText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -214,6 +213,7 @@ fun ServiceCard(service: CommunityService, onClick: () -> Unit) {
 @Composable
 fun ServiceDetailScreen(
     service: CommunityService,
+    detailConfig: com.lifeline.app.config.ServicesDetailConfig,
     onBack: () -> Unit,
     onOpenMaps: (String) -> Unit
 ) {
@@ -223,7 +223,7 @@ fun ServiceDetailScreen(
                 title = { Text(service.name) },
                 navigationIcon = {
                     TextButton(onClick = onBack) {
-                        Text("Back")
+                        Text(detailConfig.backLabel)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -245,7 +245,7 @@ fun ServiceDetailScreen(
             )
 
             Text(
-                text = "Category: ${service.category.name}",
+                text = "${detailConfig.categoryPrefix}${service.category.name}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -263,16 +263,16 @@ fun ServiceDetailScreen(
             }
 
             service.contactInfo?.let {
-                Text(text = "Contact: $it", style = MaterialTheme.typography.bodySmall)
+                Text(text = "${detailConfig.contactPrefix}$it", style = MaterialTheme.typography.bodySmall)
             }
             service.website?.let {
-                Text(text = "Website: $it", style = MaterialTheme.typography.bodySmall)
+                Text(text = "${detailConfig.websitePrefix}$it", style = MaterialTheme.typography.bodySmall)
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Map (demo)",
+                        text = detailConfig.mapDemoTitle,
                         style = MaterialTheme.typography.titleSmall
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -282,7 +282,7 @@ fun ServiceDetailScreen(
                             .height(180.dp)
                     ) {
                         Text(
-                            text = "[Dummy Google Map Placeholder]",
+                            text = detailConfig.mapPlaceholder,
                             modifier = Modifier.padding(12.dp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

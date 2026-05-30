@@ -7,6 +7,7 @@ plugins {
     // Will migrate to com.android.kotlin.multiplatform.library when AGP 9.0 is released
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.sqldelight)
+    kotlin("plugin.serialization") version libs.versions.kotlin.get()
 }
 
 kotlin {
@@ -50,6 +51,7 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             
             // SQLDelight runtime - needed for all targets except wasm
             implementation(libs.sqldelight.runtime)
@@ -127,4 +129,8 @@ sqldelight {
             srcDirs("src/commonMain/sqldelight")
         }
     }
+}
+
+tasks.matching { it.name.contains("ProcessResources", ignoreCase = true) }.configureEach {
+    dependsOn(rootProject.tasks.named("syncSharedConfig"))
 }

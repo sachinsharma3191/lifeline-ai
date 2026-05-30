@@ -2,26 +2,26 @@ import SwiftUI
 
 struct HomeView: View {
     @Bindable var store: AppStore
-
-    private let pilotAreas = ["Westcliff University", "UCI Irvine", "LA / Bay Area"]
+    private let config = AppConfigRoot.shared
+    private var home: AppConfigHomeScreen { config.screens.home }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Lifeline AI")
+            VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
+                Text(config.app.name)
                     .font(.largeTitle.bold())
 
-                Text("Your AI-powered lifestyle coach for students and relocators — finance, health, learning, and localized community services in one place.")
+                Text(config.app.tagline)
                     .font(.body)
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Pilot launch areas")
+                    Text(home.pilotAreasTitle)
                         .font(.headline.bold())
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(pilotAreas, id: \.self) { area in
-                                Label(area, systemImage: "mappin.and.ellipse")
+                        HStack(spacing: AppTheme.chipGap) {
+                            ForEach(home.pilotAreas, id: \.self) { area in
+                                Label(area, systemImage: ConfigUiHelpers.iconSystemName(for: "services"))
                                     .font(.subheadline)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
@@ -31,62 +31,59 @@ struct HomeView: View {
                         }
                     }
                 }
-                .padding(16)
+                .padding(AppTheme.cardPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(AppTheme.primaryContainer)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                SectionHeader(title: "Financial wellness snapshot")
+                SectionHeader(title: home.financialSnapshotTitle)
 
-                HStack(spacing: 8) {
-                    metricCard(label: "Income", value: store.incomeTotal, highlight: true)
-                    metricCard(label: "Expenses", value: store.expenseTotal, highlight: true)
-                    metricCard(label: "Net", value: store.netTotal, highlight: store.netTotal >= 0)
+                HStack(spacing: AppTheme.chipGap) {
+                    ForEach(home.metrics) { metric in
+                        metricCard(
+                            label: metric.label,
+                            value: metricValue(for: metric.id),
+                            highlight: metric.id != "net" || store.netTotal >= 0
+                        )
+                    }
                 }
 
-                Text("North Star: track monthly active use and cost savings as you build healthier money habits.")
+                Text(home.northStarText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                SectionHeader(title: "Your dashboard")
+                SectionHeader(title: home.dashboardTitle)
 
-                HStack(spacing: 8) {
-                    dashboardCard(
-                        title: "Finance",
-                        subtitle: "\(store.transactions.count) transactions · \(store.financialGoals.count) goals",
-                        systemImage: "building.columns"
-                    )
-                    .frame(maxWidth: .infinity)
-
-                    dashboardCard(
-                        title: "Health",
-                        subtitle: "\(store.symptoms.count) symptoms logged",
-                        systemImage: "heart.fill"
-                    )
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: AppTheme.chipGap) {
+                    ForEach(home.dashboardCards.filter { $0.id != "learning" }) { card in
+                        dashboardCard(card)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
 
-                dashboardCard(
-                    title: "Learning",
-                    subtitle: "\(store.learningGoals.count) goals · offline AI study coach",
-                    systemImage: "graduationcap.fill"
-                )
+                if let learningCard = home.dashboardCards.first(where: { $0.id == "learning" }) {
+                    dashboardCard(learningCard)
+                }
 
                 LifelineCard {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Value proposition")
+                        Text(home.valuePropositionTitle)
                             .font(.headline.bold())
-                        Text(
-                            "• Personalized cost-saving insights from your local data\n" +
-                            "• Lifestyle support beyond budgeting (health, learning, services)\n" +
-                            "• Offline AI coach — no API keys or internet required\n" +
-                            "• Localized community resources for new campuses and cities"
-                        )
-                        .font(.body)
+                        Text(home.valuePropositionItems.map { "• \($0)" }.joined(separator: "\n"))
+                            .font(.body)
                     }
                 }
             }
-            .padding(16)
+            .padding(AppTheme.screenPadding)
+        }
+    }
+
+    private func metricValue(for id: String) -> Double {
+        switch id {
+        case "income": return store.incomeTotal
+        case "expenses": return store.expenseTotal
+        case "net": return store.netTotal
+        default: return 0
         }
     }
 
@@ -104,15 +101,25 @@ struct HomeView: View {
         }
     }
 
-    private func dashboardCard(title: String, subtitle: String, systemImage: String) -> some View {
+    private func dashboardCard(_ card: AppConfigDashboardCard) -> some View {
         LifelineCard {
             HStack(spacing: 12) {
-                Image(systemName: systemImage)
+                Image(systemName: ConfigUiHelpers.iconSystemName(for: card.icon))
                     .font(.title2)
                     .foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading) {
-                    Text(title).font(.headline)
-                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                    Text(card.title).font(.headline)
+                    Text(
+                        ConfigUiHelpers.templateSubtitle(
+                            card.subtitleTemplate,
+                            transactionCount: store.transactions.count,
+                            goalCount: store.financialGoals.count,
+                            symptomCount: store.symptoms.count,
+                            learningGoalCount: store.learningGoals.count
+                        )
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 }
             }
         }

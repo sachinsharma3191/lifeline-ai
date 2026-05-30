@@ -1,18 +1,20 @@
 package com.lifeline.app.ui
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.lifeline.app.config.AppConfigLoader
+import com.lifeline.app.config.iconForConfigKey
+import com.lifeline.app.config.tabFromConfigId
 import com.lifeline.app.navigation.RootComponent
 import com.lifeline.app.utils.subscribeAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(component: RootComponent) {
+    val config = remember { AppConfigLoader.get() }
     val stackValue by component.stack.subscribeAsState()
     val stack = stackValue as? com.arkivanov.decompose.router.stack.ChildStack<*, RootComponent.Child>
     val activeChild = stack?.active?.instance
@@ -20,23 +22,18 @@ fun MainScreen(component: RootComponent) {
     Scaffold(
         bottomBar = {
             NavigationBar {
-                RootComponent.Tab.values().forEach { tab ->
+                config.tabs.forEach { tabConfig ->
+                    val tab = tabFromConfigId(tabConfig.id) ?: return@forEach
                     NavigationBarItem(
                         selected = (stack?.active?.configuration as? RootComponent.Tab) == tab,
                         onClick = { component.onTabSelected(tab) },
                         icon = {
                             Icon(
-                                imageVector = when (tab) {
-                                    RootComponent.Tab.HOME -> Icons.Default.Home
-                                    RootComponent.Tab.HEALTH -> Icons.Default.Favorite
-                                    RootComponent.Tab.FINANCE -> Icons.Default.AccountBalance
-                                    RootComponent.Tab.LEARNING -> Icons.Default.School
-                                    RootComponent.Tab.SERVICES -> Icons.Default.LocationOn
-                                },
-                                contentDescription = tab.name
+                                imageVector = iconForConfigKey(tabConfig.icon),
+                                contentDescription = tabConfig.label
                             )
                         },
-                        label = { Text(tab.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                        label = { Text(tabConfig.label) }
                     )
                 }
             }
@@ -49,9 +46,8 @@ fun MainScreen(component: RootComponent) {
                 is RootComponent.Child.Finance -> FinanceScreen(child.component)
                 is RootComponent.Child.Learning -> LearningScreen(child.component)
                 is RootComponent.Child.Services -> ServicesScreen(child.component)
-                null -> {} // Loading or no child
+                null -> {}
             }
         }
     }
 }
-

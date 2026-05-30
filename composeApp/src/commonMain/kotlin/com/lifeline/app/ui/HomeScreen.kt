@@ -4,23 +4,25 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.lifeline.app.config.AppConfigLoader
+import com.lifeline.app.config.iconForConfigKey
+import com.lifeline.app.config.templateSubtitle
 import com.lifeline.app.domain.finance.TransactionType
 import com.lifeline.app.navigation.HomeComponent
 import com.lifeline.app.utils.formatDouble
 
 @Composable
 fun HomeScreen(component: HomeComponent) {
+    val config = remember { AppConfigLoader.get() }
+    val home = config.screens.home
+    val appInfo = config.app
+
     val transactions by component.moneyViewModel.transactions.collectAsState()
     val goals by component.moneyViewModel.goals.collectAsState()
     val symptoms by component.healthViewModel.symptoms.collectAsState()
@@ -30,23 +32,27 @@ fun HomeScreen(component: HomeComponent) {
     val expenses = transactions.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
     val net = income - expenses
 
-    val pilotAreas = listOf("Westcliff University", "UCI Irvine", "LA / Bay Area")
+    val metricValues = mapOf(
+        "income" to income,
+        "expenses" to expenses,
+        "net" to net
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(config.theme.spacing.screenPadding.dp),
+        verticalArrangement = Arrangement.spacedBy(config.theme.spacing.sectionGap.dp)
     ) {
         Text(
-            text = "Lifeline AI",
+            text = appInfo.name,
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold
         )
 
         Text(
-            text = "Your AI-powered lifestyle coach for students and relocators — finance, health, learning, and localized community services in one place.",
+            text = appInfo.tagline,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -57,24 +63,24 @@ fun HomeScreen(component: HomeComponent) {
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(config.theme.spacing.cardPadding.dp)) {
                 Text(
-                    text = "Pilot launch areas",
+                    text = home.pilotAreasTitle,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(config.theme.spacing.chipGap.dp)
                 ) {
-                    pilotAreas.forEach { area ->
+                    home.pilotAreas.forEach { area ->
                         AssistChip(
                             onClick = {},
                             label = { Text(area) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Default.LocationOn,
+                                    imageVector = iconForConfigKey("services"),
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
@@ -86,83 +92,80 @@ fun HomeScreen(component: HomeComponent) {
         }
 
         Text(
-            text = "Financial wellness snapshot",
+            text = home.financialSnapshotTitle,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold
         )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(config.theme.spacing.chipGap.dp)
         ) {
-            MetricCard(
-                label = "Income",
-                value = "$${formatDouble(income)}",
-                modifier = Modifier.weight(1f)
-            )
-            MetricCard(
-                label = "Expenses",
-                value = "$${formatDouble(expenses)}",
-                modifier = Modifier.weight(1f)
-            )
-            MetricCard(
-                label = "Net",
-                value = "$${formatDouble(net)}",
-                modifier = Modifier.weight(1f),
-                highlight = net >= 0
-            )
+            home.metrics.forEach { metric ->
+                val value = metricValues[metric.id] ?: 0.0
+                MetricCard(
+                    label = metric.label,
+                    value = "$${formatDouble(value)}",
+                    modifier = Modifier.weight(1f),
+                    highlight = metric.id != "net" || net >= 0
+                )
+            }
         }
 
         Text(
-            text = "North Star: track monthly active use and cost savings as you build healthier money habits.",
+            text = home.northStarText,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Text(
-            text = "Your dashboard",
+            text = home.dashboardTitle,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold
         )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(config.theme.spacing.chipGap.dp)
         ) {
+            home.dashboardCards.filter { it.id != "learning" }.forEach { card ->
+                DashboardCard(
+                    title = card.title,
+                    subtitle = templateSubtitle(
+                        template = card.subtitleTemplate,
+                        transactionCount = transactions.size,
+                        goalCount = goals.size,
+                        symptomCount = symptoms.size,
+                        learningGoalCount = learningGoals.size
+                    ),
+                    icon = { Icon(iconForConfigKey(card.icon), contentDescription = null) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        home.dashboardCards.firstOrNull { it.id == "learning" }?.let { card ->
             DashboardCard(
-                title = "Finance",
-                subtitle = "${transactions.size} transactions · ${goals.size} goals",
-                icon = { Icon(Icons.Default.AccountBalance, contentDescription = null) },
-                modifier = Modifier.weight(1f)
-            )
-            DashboardCard(
-                title = "Health",
-                subtitle = "${symptoms.size} symptoms logged",
-                icon = { Icon(Icons.Default.Favorite, contentDescription = null) },
-                modifier = Modifier.weight(1f)
+                title = card.title,
+                subtitle = templateSubtitle(
+                    template = card.subtitleTemplate,
+                    learningGoalCount = learningGoals.size
+                ),
+                icon = { Icon(iconForConfigKey(card.icon), contentDescription = null) },
+                modifier = Modifier.fillMaxWidth()
             )
         }
 
-        DashboardCard(
-            title = "Learning",
-            subtitle = "${learningGoals.size} goals · offline AI study coach",
-            icon = { Icon(Icons.Default.School, contentDescription = null) },
-            modifier = Modifier.fillMaxWidth()
-        )
-
         Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(config.theme.spacing.cardPadding.dp)) {
                 Text(
-                    text = "Value proposition",
+                    text = home.valuePropositionTitle,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "• Personalized cost-saving insights from your local data\n" +
-                        "• Lifestyle support beyond budgeting (health, learning, services)\n" +
-                        "• Offline AI coach — no API keys or internet required\n" +
-                        "• Localized community resources for new campuses and cities",
+                    text = home.valuePropositionItems.joinToString("\n") { "• $it" },
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

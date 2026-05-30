@@ -21,3 +21,27 @@ subprojects {
         }
     }
 }
+
+tasks.register<Copy>("syncSharedConfig") {
+    group = "lifeline"
+    description = "Copy language-agnostic UI config into Android/KMP and iOS resource folders"
+    from("shared-config")
+    into("shared/src/commonMain/resources/config")
+    outputs.dir("shared/src/commonMain/resources/config")
+}
+
+tasks.register<Copy>("syncSharedConfigIos") {
+    group = "lifeline"
+    description = "Copy language-agnostic UI config into the iOS app bundle resources"
+    from("shared-config")
+    into("iosApp/iosApp/Resources/Config")
+    outputs.dir("iosApp/iosApp/Resources/Config")
+}
+
+tasks.named("syncSharedConfig") {
+    finalizedBy("syncSharedConfigIos")
+}
+
+project(":shared").tasks.matching { it.name.startsWith("compile") }.configureEach {
+    dependsOn(rootProject.tasks.named("syncSharedConfig"))
+}

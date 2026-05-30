@@ -212,6 +212,21 @@ The iOS app is a **standalone SwiftUI application** in `iosApp/`. It does not de
 
 Features mirror the KMP app: Finance, Health, Learning, Services, and an offline AI coach with local JSON persistence.
 
+### Shared UI configuration (language-agnostic)
+
+Screen layout, copy, tabs, AI prompts, theme tokens, and service catalog settings live in one place:
+
+```
+shared-config/app-config.json
+```
+
+Both platforms load this file at runtime:
+
+- **Android / KMP:** `./gradlew syncSharedConfig` copies JSON into `shared/src/commonMain/resources/config/`, then `AppConfigLoader.get()` parses it in the shared module.
+- **iOS:** the same sync task copies JSON into `iosApp/iosApp/Resources/Config/`, then `AppConfigRoot.shared` loads it from the app bundle.
+
+Edit `shared-config/app-config.json` to change labels, tab order, pilot areas, AI suggestion chips, section titles, colors, or service seed count — without touching Kotlin or Swift UI code. Re-run `./gradlew syncSharedConfig` before building iOS (Android syncs automatically during `:shared` compile).
+
 ---
 
 ## Quick Start

@@ -1,12 +1,13 @@
 import Foundation
 
 enum CommunityServicesCatalog {
-    static let all: [CommunityServiceRecord] = {
+    static var all: [CommunityServiceRecord] {
+        let seedCount = AppConfigRoot.shared.servicesCatalog.seedCount
         let streetNames = ["Main St", "Market St", "Broadway", "Pine St", "Oak Ave", "Sunset Blvd"]
         let cities = ["San Francisco", "San Jose", "Oakland", "Berkeley"]
         let categories = ServiceCategory.allCases
 
-        return (1...100).map { index in
+        return (1...seedCount).map { index in
             let category = categories[(index - 1) % categories.count]
             let streetNumber = 100 + index
             let streetName = streetNames[(index - 1) % streetNames.count]
@@ -37,7 +38,7 @@ enum CommunityServicesCatalog {
                 website: "https://example.org/service/\(index)"
             )
         }
-    }()
+    }
 
     static func search(query: String) -> [CommunityServiceRecord] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)

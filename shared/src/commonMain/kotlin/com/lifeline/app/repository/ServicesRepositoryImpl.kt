@@ -1,5 +1,6 @@
 package com.lifeline.app.repository
 
+import com.lifeline.app.config.AppConfigLoader
 import com.lifeline.app.database.LifelineDatabase
 import com.lifeline.app.domain.services.CommunityService
 import com.lifeline.app.domain.services.ServiceCategory
@@ -14,8 +15,9 @@ class ServicesRepositoryImpl(
         val count = database.servicesQueries.countServices().executeAsOne()
         if (count > 0L) return
 
+        val seedCount = AppConfigLoader.get().servicesCatalog.seedCount
         val categories = ServiceCategory.values()
-        for (i in 1..100) {
+        for (i in 1..seedCount) {
             val category = categories[(i - 1) % categories.size]
             val id = "seed_service_$i"
 

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.lifeline.app.domain.finance.FinancialGoal
 import com.lifeline.app.domain.finance.Transaction
 import com.lifeline.app.domain.finance.TransactionType
+import com.lifeline.app.config.AppConfigLoader
 import com.lifeline.app.navigation.FinanceComponent
 import com.lifeline.app.utils.currentTimestamp
 import com.lifeline.app.utils.formatDouble
@@ -37,6 +38,11 @@ import com.lifeline.app.utils.randomUUID
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FinanceScreen(component: FinanceComponent) {
+    val config = remember { AppConfigLoader.get() }
+    val screen = config.screens.finance
+    val goalsSection = screen.sections.getValue("goals")
+    val transactionsSection = screen.sections.getValue("transactions")
+
     val viewModel = component.viewModel
     val uiState by viewModel.uiState.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
@@ -56,7 +62,7 @@ fun FinanceScreen(component: FinanceComponent) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Finance") },
+                title = { Text(screen.title) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -112,23 +118,12 @@ fun FinanceScreen(component: FinanceComponent) {
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(onClick = {
-                    val p = "Finance summary"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Finance summary") }
-
-                TextButton(onClick = {
-                    val p = "Top expense category"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Top category") }
-
-                TextButton(onClick = {
-                    val p = "Budget advice"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Budget") }
+                screen.aiSuggestions.forEach { suggestion ->
+                    TextButton(onClick = {
+                        aiPrompt = suggestion.prompt
+                        viewModel.askAi(suggestion.prompt)
+                    }) { Text(suggestion.label) }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -136,7 +131,7 @@ fun FinanceScreen(component: FinanceComponent) {
             OutlinedTextField(
                 value = aiPrompt,
                 onValueChange = { aiPrompt = it },
-                label = { Text("Ask AI (offline)") },
+                label = { Text(screen.aiCoachLabel) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
@@ -182,7 +177,7 @@ fun FinanceScreen(component: FinanceComponent) {
             }
 
             Text(
-                text = "Financial Goals",
+                text = goalsSection.title,
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -204,7 +199,7 @@ fun FinanceScreen(component: FinanceComponent) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Recent Transactions",
+                text = transactionsSection.title,
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -215,7 +210,7 @@ fun FinanceScreen(component: FinanceComponent) {
                     .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(transactions.take(10)) { transaction ->
+                items(transactions.take(transactionsSection.listLimit ?: 10)) { transaction ->
                     TransactionCard(
                         transaction = transaction,
                         onEdit = { transactionToEdit = it }

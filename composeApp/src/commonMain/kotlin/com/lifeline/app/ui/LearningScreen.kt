@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.lifeline.app.config.AppConfigLoader
 import com.lifeline.app.domain.learning.LearningGoal
 import com.lifeline.app.domain.learning.LearningModule
 import com.lifeline.app.navigation.LearningComponent
@@ -28,6 +29,11 @@ import com.lifeline.app.utils.randomUUID
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LearningScreen(component: LearningComponent) {
+    val config = remember { AppConfigLoader.get() }
+    val screen = config.screens.learning
+    val goalsSection = screen.sections.getValue("goals")
+    val modulesSection = screen.sections.getValue("modules")
+
     val viewModel = component.viewModel
     val uiState by viewModel.uiState.collectAsState()
     val goals by viewModel.goals.collectAsState()
@@ -44,7 +50,7 @@ fun LearningScreen(component: LearningComponent) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Learning") },
+                title = { Text(screen.title) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -68,17 +74,12 @@ fun LearningScreen(component: LearningComponent) {
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                TextButton(onClick = {
-                    val p = "Learning progress"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Progress") }
-
-                TextButton(onClick = {
-                    val p = "Study plan"
-                    aiPrompt = p
-                    viewModel.askAi(p)
-                }) { Text("Study plan") }
+                screen.aiSuggestions.forEach { suggestion ->
+                    TextButton(onClick = {
+                        aiPrompt = suggestion.prompt
+                        viewModel.askAi(suggestion.prompt)
+                    }) { Text(suggestion.label) }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -86,7 +87,7 @@ fun LearningScreen(component: LearningComponent) {
             OutlinedTextField(
                 value = aiPrompt,
                 onValueChange = { aiPrompt = it },
-                label = { Text("Ask AI (offline)") },
+                label = { Text(screen.aiCoachLabel) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
@@ -134,7 +135,7 @@ fun LearningScreen(component: LearningComponent) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Learning Goals",
+                text = goalsSection.title,
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -153,7 +154,7 @@ fun LearningScreen(component: LearningComponent) {
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "Modules",
+                text = modulesSection.title,
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -162,7 +163,11 @@ fun LearningScreen(component: LearningComponent) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(modules) { module ->
-                    ModuleCard(module) {
+                    ModuleCard(
+                        module = module,
+                        completedLabel = modulesSection.completedLabel ?: "✓ Completed",
+                        completeButtonLabel = modulesSection.completeButtonLabel ?: "Complete"
+                    ) {
                         viewModel.completeModule(module.id)
                     }
                 }
@@ -228,7 +233,12 @@ fun LearningGoalCard(goal: LearningGoal, onEdit: (LearningGoal) -> Unit) {
 }
 
 @Composable
-fun ModuleCard(module: LearningModule, onComplete: () -> Unit) {
+fun ModuleCard(
+    module: LearningModule,
+    completedLabel: String,
+    completeButtonLabel: String,
+    onComplete: () -> Unit
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -253,11 +263,11 @@ fun ModuleCard(module: LearningModule, onComplete: () -> Unit) {
             }
             if (!module.completed) {
                 Button(onClick = onComplete) {
-                    Text("Complete")
+                    Text(completeButtonLabel)
                 }
             } else {
                 Text(
-                    text = "✓ Completed",
+                    text = completedLabel,
                     color = MaterialTheme.colorScheme.primary
                 )
             }

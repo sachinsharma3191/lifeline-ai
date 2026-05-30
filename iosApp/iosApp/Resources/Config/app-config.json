@@ -1,0 +1,165 @@
+{
+  "version": 1,
+  "app": {
+    "name": "Lifeline AI",
+    "tagline": "Your AI-powered lifestyle coach for students and relocators — finance, health, learning, and localized community services in one place."
+  },
+  "theme": {
+    "colors": {
+      "primary": "#6750A4",
+      "primaryContainer": "#EADDFF",
+      "secondaryContainer": "#E8DEF8",
+      "error": "#B3261E",
+      "onSurfaceVariant": "#49454F"
+    },
+    "spacing": {
+      "screenPadding": 16,
+      "cardPadding": 16,
+      "sectionGap": 16,
+      "chipGap": 8
+    }
+  },
+  "tabs": [
+    { "id": "home", "label": "Home", "icon": "home" },
+    { "id": "health", "label": "Health", "icon": "heart" },
+    { "id": "finance", "label": "Finance", "icon": "finance" },
+    { "id": "learning", "label": "Learning", "icon": "learning" },
+    { "id": "services", "label": "Services", "icon": "services" }
+  ],
+  "screens": {
+    "home": {
+      "pilotAreasTitle": "Pilot launch areas",
+      "pilotAreas": [
+        "Westcliff University",
+        "UCI Irvine",
+        "LA / Bay Area"
+      ],
+      "financialSnapshotTitle": "Financial wellness snapshot",
+      "metrics": [
+        { "id": "income", "label": "Income" },
+        { "id": "expenses", "label": "Expenses" },
+        { "id": "net", "label": "Net" }
+      ],
+      "northStarText": "North Star: track monthly active use and cost savings as you build healthier money habits.",
+      "dashboardTitle": "Your dashboard",
+      "dashboardCards": [
+        {
+          "id": "finance",
+          "title": "Finance",
+          "subtitleTemplate": "{transactionCount} transactions · {goalCount} goals",
+          "icon": "finance"
+        },
+        {
+          "id": "health",
+          "title": "Health",
+          "subtitleTemplate": "{symptomCount} symptoms logged",
+          "icon": "heart"
+        },
+        {
+          "id": "learning",
+          "title": "Learning",
+          "subtitleTemplate": "{learningGoalCount} goals · offline AI study coach",
+          "icon": "learning"
+        }
+      ],
+      "valuePropositionTitle": "Value proposition",
+      "valuePropositionItems": [
+        "Personalized cost-saving insights from your local data",
+        "Lifestyle support beyond budgeting (health, learning, services)",
+        "Offline AI coach — no API keys or internet required",
+        "Localized community resources for new campuses and cities"
+      ]
+    },
+    "finance": {
+      "title": "Finance",
+      "aiCoachLabel": "Ask AI (offline)",
+      "aiSuggestions": [
+        { "label": "Finance summary", "prompt": "Finance summary" },
+        { "label": "Top category", "prompt": "Top expense category" },
+        { "label": "Budget", "prompt": "Budget advice" }
+      ],
+      "sections": {
+        "goals": {
+          "title": "Financial Goals",
+          "emptyText": "No goals yet."
+        },
+        "transactions": {
+          "title": "Recent Transactions",
+          "emptyText": "No transactions yet.",
+          "listLimit": 10
+        }
+      },
+      "forms": {
+        "addTransactionTitle": "Add Transaction",
+        "editTransactionTitle": "Edit Transaction",
+        "addGoalTitle": "Add Financial Goal",
+        "editGoalTitle": "Edit Financial Goal"
+      }
+    },
+    "health": {
+      "title": "Health",
+      "aiCoachLabel": "Ask AI (offline)",
+      "aiSuggestions": [
+        { "label": "Health trends", "prompt": "Health trends" },
+        { "label": "Symptoms", "prompt": "Symptom summary" }
+      ],
+      "sections": {
+        "symptoms": {
+          "title": "Recent Symptoms",
+          "emptyText": "No symptoms logged yet.",
+          "listLimit": 10
+        }
+      },
+      "forms": {
+        "addSymptomTitle": "Add Symptom",
+        "editSymptomTitle": "Edit Symptom"
+      }
+    },
+    "learning": {
+      "title": "Learning",
+      "aiCoachLabel": "Ask AI (offline)",
+      "aiSuggestions": [
+        { "label": "Progress", "prompt": "Learning progress" },
+        { "label": "Study plan", "prompt": "Study plan" }
+      ],
+      "sections": {
+        "goals": {
+          "title": "Learning Goals",
+          "emptyText": "No learning goals yet."
+        },
+        "modules": {
+          "title": "Modules",
+          "emptyText": "No modules yet.",
+          "completedLabel": "✓ Completed",
+          "completeButtonLabel": "Complete"
+        }
+      },
+      "forms": {
+        "addGoalTitle": "Add Learning Goal",
+        "editGoalTitle": "Edit Learning Goal"
+      }
+    },
+    "services": {
+      "title": "Community Services",
+      "searchPlaceholder": "Search services...",
+      "searchEmptyText": "Search to see services",
+      "aiCoachLabel": "Ask AI (offline)",
+      "aiSuggestions": [
+        { "label": "Services help", "prompt": "Services help" },
+        { "label": "Community", "prompt": "Community help" }
+      ],
+      "detail": {
+        "backLabel": "Back",
+        "mapDemoTitle": "Map (demo)",
+        "mapPlaceholder": "[Dummy Google Map Placeholder]",
+        "categoryPrefix": "Category: ",
+        "contactPrefix": "Contact: ",
+        "websitePrefix": "Website: "
+      }
+    }
+  },
+  "servicesCatalog": {
+    "seedCount": 100,
+    "mapsUrlTemplate": "https://www.google.com/maps/search/?api=1&query={query}"
+  }
+}

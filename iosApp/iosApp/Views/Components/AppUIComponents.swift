@@ -1,8 +1,31 @@
 import SwiftUI
 
 enum AppTheme {
-    static let primaryContainer = Color.accentColor.opacity(0.18)
-    static let secondaryContainer = Color(.secondarySystemBackground)
+    static var config: AppConfigRoot { AppConfigRoot.shared }
+
+    static var primaryContainer: Color {
+        ConfigUiHelpers.color(from: config.theme.colors.primaryContainer)
+    }
+
+    static var secondaryContainer: Color {
+        ConfigUiHelpers.color(from: config.theme.colors.secondaryContainer)
+    }
+
+    static var screenPadding: CGFloat {
+        CGFloat(config.theme.spacing.screenPadding)
+    }
+
+    static var cardPadding: CGFloat {
+        CGFloat(config.theme.spacing.cardPadding)
+    }
+
+    static var sectionGap: CGFloat {
+        CGFloat(config.theme.spacing.sectionGap)
+    }
+
+    static var chipGap: CGFloat {
+        CGFloat(config.theme.spacing.chipGap)
+    }
 }
 
 extension View {
@@ -32,34 +55,36 @@ struct LifelineCard<Content: View>: View {
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
+        .padding(AppTheme.cardPadding)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
     }
 }
 
-struct AiSuggestion: Identifiable {
-    let id = UUID()
+struct AiSuggestionItem: Identifiable {
+    let id: String
     let label: String
     let prompt: String
 
-    init(_ label: String, prompt: String? = nil) {
-        self.label = label
-        self.prompt = prompt ?? label
+    init(_ config: AppConfigAiSuggestion) {
+        id = config.label
+        label = config.label
+        prompt = config.prompt
     }
 }
 
 struct AiCoachBlock: View {
     @Binding var prompt: String
     let response: String?
-    let suggestions: [AiSuggestion]
+    let suggestions: [AiSuggestionItem]
+    let coachLabel: String
     let onAsk: (String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: AppTheme.chipGap) {
                     ForEach(suggestions) { suggestion in
                         Button(suggestion.label) {
                             prompt = suggestion.prompt
@@ -71,7 +96,7 @@ struct AiCoachBlock: View {
                 }
             }
 
-            TextField("Ask AI (offline)", text: $prompt)
+            TextField(coachLabel, text: $prompt)
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.done)
                 .onSubmit(submit)
@@ -85,7 +110,7 @@ struct AiCoachBlock: View {
 
             if let response {
                 Text(response)
-                    .padding(16)
+                    .padding(AppTheme.cardPadding)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(AppTheme.secondaryContainer)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -97,6 +122,24 @@ struct AiCoachBlock: View {
         let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         onAsk(trimmed)
+    }
+}
+
+struct AiCoachSection: View {
+    @Binding var prompt: String
+    let response: String?
+    let suggestions: [AiSuggestionItem]
+    let coachLabel: String
+    let onAsk: (String) -> Void
+
+    var body: some View {
+        AiCoachBlock(
+            prompt: $prompt,
+            response: response,
+            suggestions: suggestions,
+            coachLabel: coachLabel,
+            onAsk: onAsk
+        )
     }
 }
 

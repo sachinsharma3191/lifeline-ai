@@ -2,50 +2,57 @@ import SwiftUI
 
 struct HealthView: View {
     @Bindable var store: AppStore
+    private let screen = AppConfigRoot.shared.screens.health
+    private var symptomsSection: AppConfigSection { screen.sections["symptoms"]! }
+
     @State private var aiPrompt = ""
     @State private var showAddSymptom = false
     @State private var editingSymptom: SymptomRecord?
 
-    private let aiSuggestions = [
-        AiSuggestion("Health trends"),
-        AiSuggestion("Symptoms", prompt: "Symptom summary")
-    ]
+    private var aiSuggestions: [AiSuggestionItem] {
+        screen.aiSuggestions.map(AiSuggestionItem.init)
+    }
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
                         AiCoachBlock(
                             prompt: $aiPrompt,
                             response: store.healthAiResponse,
-                            suggestions: aiSuggestions
+                            suggestions: aiSuggestions,
+                            coachLabel: screen.aiCoachLabel
                         ) { store.askHealthAi($0) }
 
-                        SectionHeader(title: "Recent Symptoms")
-
+                        SectionHeader(title: symptomsSection.title)
                         if store.symptoms.isEmpty {
-                            Text("No symptoms logged yet.")
-                                .foregroundStyle(.secondary)
+                            Text(symptomsSection.emptyText).foregroundStyle(.secondary)
                         } else {
-                            ForEach(store.symptoms.prefix(10)) { symptom in
-                                symptomCard(symptom)
-                            }
+                            ForEach(store.symptoms.prefix(symptomsSection.listLimit ?? 10)) { symptomCard($0) }
                         }
                     }
-                    .padding(16)
+                    .padding(AppTheme.screenPadding)
                     .padding(.bottom, 88)
                 }
 
                 SingleFloatingAction { showAddSymptom = true }
-                    .padding(16)
+                    .padding(AppTheme.screenPadding)
             }
-            .lifelineScreenTitle("Health")
+            .lifelineScreenTitle(screen.title)
             .sheet(isPresented: $showAddSymptom) {
-                SymptomForm(mode: .add) { store.addSymptom($0) }
+                SymptomForm(
+                    title: screen.forms["addSymptomTitle"] ?? "Add Symptom",
+                    confirmLabel: "Add",
+                    mode: .add
+                ) { store.addSymptom($0) }
             }
             .sheet(item: $editingSymptom) { symptom in
-                SymptomForm(mode: .edit(symptom)) { store.updateSymptom($0) }
+                SymptomForm(
+                    title: screen.forms["editSymptomTitle"] ?? "Edit Symptom",
+                    confirmLabel: "Save",
+                    mode: .edit(symptom)
+                ) { store.updateSymptom($0) }
             }
         }
     }
@@ -59,11 +66,7 @@ struct HealthView: View {
                     Text("Severity: \(symptom.severity)/10")
                         .font(.caption)
                         .foregroundStyle(Color.accentColor)
-                    Button {
-                        editingSymptom = symptom
-                    } label: {
-                        Image(systemName: "pencil")
-                    }
+                    Button { editingSymptom = symptom } label: { Image(systemName: "pencil") }
                 }
                 Text(symptom.category.rawValue)
                     .font(.caption)
@@ -79,6 +82,8 @@ struct HealthView: View {
 private struct SymptomForm: View {
     enum Mode { case add, edit(SymptomRecord) }
 
+    let title: String
+    let confirmLabel: String
     let mode: Mode
     let onSave: (SymptomRecord) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -88,7 +93,9 @@ private struct SymptomForm: View {
     @State private var notes = ""
     private var existingSymptom: SymptomRecord?
 
-    init(mode: Mode, onSave: @escaping (SymptomRecord) -> Void) {
+    init(title: String, confirmLabel: String, mode: Mode, onSave: @escaping (SymptomRecord) -> Void) {
+        self.title = title
+        self.confirmLabel = confirmLabel
         self.mode = mode
         self.onSave = onSave
         if case .edit(let symptom) = mode {
@@ -108,36 +115,25 @@ private struct SymptomForm: View {
                 TextField("Notes (optional)", text: $notes, axis: .vertical)
                     .lineLimit(3...5)
             }
-            .navigationTitle(modeTitle)
+            .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(modeButtonTitle) {
+                    Button(confirmLabel) {
                         guard !name.isEmpty else { return }
-                        let record = SymptomRecord(
+                        onSave(SymptomRecord(
                             id: existingSymptom?.id ?? UUID().uuidString,
                             name: name,
                             severity: Int(severity),
                             timestamp: existingSymptom?.timestamp ?? Date(),
                             notes: notes.isEmpty ? nil : notes,
                             category: existingSymptom?.category ?? .other
-                        )
-                        onSave(record)
+                        ))
                         dismiss()
                     }
                 }
             }
         }
         .presentationDetents([.medium, .large])
-    }
-
-    private var modeTitle: String {
-        if case .edit = mode { return "Edit Symptom" }
-        return "Add Symptom"
-    }
-
-    private var modeButtonTitle: String {
-        if case .edit = mode { return "Save" }
-        return "Add"
     }
 }

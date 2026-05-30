@@ -2,52 +2,47 @@ import SwiftUI
 
 struct FinanceView: View {
     @Bindable var store: AppStore
+    private let screen = AppConfigRoot.shared.screens.finance
+    private var goalsSection: AppConfigSection { screen.sections["goals"]! }
+    private var transactionsSection: AppConfigSection { screen.sections["transactions"]! }
+
     @State private var aiPrompt = ""
     @State private var showAddTransaction = false
     @State private var showAddGoal = false
     @State private var editingTransaction: TransactionRecord?
     @State private var editingGoal: FinancialGoalRecord?
 
-    private let aiSuggestions = [
-        AiSuggestion("Finance summary"),
-        AiSuggestion("Top category", prompt: "Top expense category"),
-        AiSuggestion("Budget", prompt: "Budget advice")
-    ]
+    private var aiSuggestions: [AiSuggestionItem] {
+        screen.aiSuggestions.map(AiSuggestionItem.init)
+    }
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
                         AiCoachBlock(
                             prompt: $aiPrompt,
                             response: store.financeAiResponse,
-                            suggestions: aiSuggestions
+                            suggestions: aiSuggestions,
+                            coachLabel: screen.aiCoachLabel
                         ) { store.askFinanceAi($0) }
 
-                        SectionHeader(title: "Financial Goals")
-
+                        SectionHeader(title: goalsSection.title)
                         if store.financialGoals.isEmpty {
-                            Text("No goals yet.")
-                                .foregroundStyle(.secondary)
+                            Text(goalsSection.emptyText).foregroundStyle(.secondary)
                         } else {
-                            ForEach(store.financialGoals) { goal in
-                                goalCard(goal)
-                            }
+                            ForEach(store.financialGoals) { goalCard($0) }
                         }
 
-                        SectionHeader(title: "Recent Transactions")
-
+                        SectionHeader(title: transactionsSection.title)
                         if store.transactions.isEmpty {
-                            Text("No transactions yet.")
-                                .foregroundStyle(.secondary)
+                            Text(transactionsSection.emptyText).foregroundStyle(.secondary)
                         } else {
-                            ForEach(store.transactions.prefix(10)) { transaction in
-                                transactionCard(transaction)
-                            }
+                            ForEach(store.transactions.prefix(transactionsSection.listLimit ?? 10)) { transactionCard($0) }
                         }
                     }
-                    .padding(16)
+                    .padding(AppTheme.screenPadding)
                     .padding(.bottom, 88)
                 }
 
@@ -55,20 +50,36 @@ struct FinanceView: View {
                     onAddGoal: { showAddGoal = true },
                     onAddTransaction: { showAddTransaction = true }
                 )
-                .padding(16)
+                .padding(AppTheme.screenPadding)
             }
-            .lifelineScreenTitle("Finance")
+            .lifelineScreenTitle(screen.title)
             .sheet(isPresented: $showAddTransaction) {
-                TransactionForm(mode: .add) { store.addTransaction($0) }
+                TransactionForm(
+                    title: screen.forms["addTransactionTitle"] ?? "Add Transaction",
+                    confirmLabel: "Add",
+                    mode: .add
+                ) { store.addTransaction($0) }
             }
             .sheet(item: $editingTransaction) { transaction in
-                TransactionForm(mode: .edit(transaction)) { store.updateTransaction($0) }
+                TransactionForm(
+                    title: screen.forms["editTransactionTitle"] ?? "Edit Transaction",
+                    confirmLabel: "Save",
+                    mode: .edit(transaction)
+                ) { store.updateTransaction($0) }
             }
             .sheet(isPresented: $showAddGoal) {
-                GoalForm(mode: .add) { store.addFinancialGoal($0) }
+                GoalForm(
+                    title: screen.forms["addGoalTitle"] ?? "Add Financial Goal",
+                    confirmLabel: "Add",
+                    mode: .add
+                ) { store.addFinancialGoal($0) }
             }
             .sheet(item: $editingGoal) { goal in
-                GoalForm(mode: .edit(goal)) { store.updateFinancialGoal($0) }
+                GoalForm(
+                    title: screen.forms["editGoalTitle"] ?? "Edit Financial Goal",
+                    confirmLabel: "Save",
+                    mode: .edit(goal)
+                ) { store.updateFinancialGoal($0) }
             }
         }
     }
@@ -79,11 +90,7 @@ struct FinanceView: View {
                 HStack {
                     Text(goal.name).font(.headline)
                     Spacer()
-                    Button {
-                        editingGoal = goal
-                    } label: {
-                        Image(systemName: "pencil")
-                    }
+                    Button { editingGoal = goal } label: { Image(systemName: "pencil") }
                 }
                 ProgressView(value: min(goal.currentAmount / max(goal.targetAmount, 1), 1))
                 Text("$\(FormatUtils.formatAmount(goal.currentAmount)) / $\(FormatUtils.formatAmount(goal.targetAmount))")
@@ -104,11 +111,7 @@ struct FinanceView: View {
                 }
                 Spacer()
                 TransactionAmountText(amount: transaction.amount, type: transaction.type)
-                Button {
-                    editingTransaction = transaction
-                } label: {
-                    Image(systemName: "pencil")
-                }
+                Button { editingTransaction = transaction } label: { Image(systemName: "pencil") }
             }
         }
     }
@@ -117,6 +120,8 @@ struct FinanceView: View {
 private struct TransactionForm: View {
     enum Mode { case add, edit(TransactionRecord) }
 
+    let title: String
+    let confirmLabel: String
     let mode: Mode
     let onSave: (TransactionRecord) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -126,7 +131,9 @@ private struct TransactionForm: View {
     @State private var description = ""
     private var existingRecord: TransactionRecord?
 
-    init(mode: Mode, onSave: @escaping (TransactionRecord) -> Void) {
+    init(title: String, confirmLabel: String, mode: Mode, onSave: @escaping (TransactionRecord) -> Void) {
+        self.title = title
+        self.confirmLabel = confirmLabel
         self.mode = mode
         self.onSave = onSave
         if case .edit(let record) = mode {
@@ -140,26 +147,24 @@ private struct TransactionForm: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Amount", text: $amount)
-                    .keyboardType(.decimalPad)
+                TextField("Amount", text: $amount).keyboardType(.decimalPad)
                 TextField("Category", text: $category)
                 TextField("Description", text: $description)
             }
-            .navigationTitle(modeTitle)
+            .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(modeButtonTitle) {
+                    Button(confirmLabel) {
                         guard let value = Double(amount), !category.isEmpty else { return }
-                        let record = TransactionRecord(
+                        onSave(TransactionRecord(
                             id: existingRecord?.id ?? UUID().uuidString,
                             amount: value,
                             type: existingRecord?.type ?? .expense,
                             category: category,
                             timestamp: existingRecord?.timestamp ?? Date(),
                             description: description.isEmpty ? nil : description
-                        )
-                        onSave(record)
+                        ))
                         dismiss()
                     }
                 }
@@ -167,21 +172,13 @@ private struct TransactionForm: View {
         }
         .presentationDetents([.medium])
     }
-
-    private var modeTitle: String {
-        if case .edit = mode { return "Edit Transaction" }
-        return "Add Transaction"
-    }
-
-    private var modeButtonTitle: String {
-        if case .edit = mode { return "Save" }
-        return "Add"
-    }
 }
 
 private struct GoalForm: View {
     enum Mode { case add, edit(FinancialGoalRecord) }
 
+    let title: String
+    let confirmLabel: String
     let mode: Mode
     let onSave: (FinancialGoalRecord) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -191,7 +188,9 @@ private struct GoalForm: View {
     @State private var category = ""
     private var existingGoal: FinancialGoalRecord?
 
-    init(mode: Mode, onSave: @escaping (FinancialGoalRecord) -> Void) {
+    init(title: String, confirmLabel: String, mode: Mode, onSave: @escaping (FinancialGoalRecord) -> Void) {
+        self.title = title
+        self.confirmLabel = confirmLabel
         self.mode = mode
         self.onSave = onSave
         if case .edit(let goal) = mode {
@@ -206,39 +205,27 @@ private struct GoalForm: View {
         NavigationStack {
             Form {
                 TextField("Goal Name", text: $name)
-                TextField("Target Amount", text: $targetAmount)
-                    .keyboardType(.decimalPad)
+                TextField("Target Amount", text: $targetAmount).keyboardType(.decimalPad)
                 TextField("Category", text: $category)
             }
-            .navigationTitle(modeTitle)
+            .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(modeButtonTitle) {
+                    Button(confirmLabel) {
                         guard let target = Double(targetAmount), !name.isEmpty else { return }
-                        let record = FinancialGoalRecord(
+                        onSave(FinancialGoalRecord(
                             id: existingGoal?.id ?? UUID().uuidString,
                             name: name,
                             targetAmount: target,
                             currentAmount: existingGoal?.currentAmount ?? 0,
                             category: category
-                        )
-                        onSave(record)
+                        ))
                         dismiss()
                     }
                 }
             }
         }
         .presentationDetents([.medium])
-    }
-
-    private var modeTitle: String {
-        if case .edit = mode { return "Edit Financial Goal" }
-        return "Add Financial Goal"
-    }
-
-    private var modeButtonTitle: String {
-        if case .edit = mode { return "Save" }
-        return "Add"
     }
 }

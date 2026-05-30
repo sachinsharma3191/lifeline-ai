@@ -2,61 +2,65 @@ import SwiftUI
 
 struct LearningView: View {
     @Bindable var store: AppStore
+    private let screen = AppConfigRoot.shared.screens.learning
+    private var goalsSection: AppConfigLearningSection { screen.sections["goals"]! }
+    private var modulesSection: AppConfigLearningSection { screen.sections["modules"]! }
+
     @State private var aiPrompt = ""
     @State private var showAddGoal = false
     @State private var editingGoal: LearningGoalRecord?
 
-    private let aiSuggestions = [
-        AiSuggestion("Progress", prompt: "Learning progress"),
-        AiSuggestion("Study plan")
-    ]
+    private var aiSuggestions: [AiSuggestionItem] {
+        screen.aiSuggestions.map(AiSuggestionItem.init)
+    }
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottomTrailing) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
                         AiCoachBlock(
                             prompt: $aiPrompt,
                             response: store.learningAiResponse,
-                            suggestions: aiSuggestions
+                            suggestions: aiSuggestions,
+                            coachLabel: screen.aiCoachLabel
                         ) { store.askLearningAi($0) }
 
-                        SectionHeader(title: "Learning Goals")
-
+                        SectionHeader(title: goalsSection.title)
                         if store.learningGoals.isEmpty {
-                            Text("No learning goals yet.")
-                                .foregroundStyle(.secondary)
+                            Text(goalsSection.emptyText).foregroundStyle(.secondary)
                         } else {
-                            ForEach(store.learningGoals) { goal in
-                                learningGoalCard(goal)
-                            }
+                            ForEach(store.learningGoals) { learningGoalCard($0) }
                         }
 
-                        SectionHeader(title: "Modules")
-
+                        SectionHeader(title: modulesSection.title)
                         if store.learningModules.isEmpty {
-                            Text("No modules yet.")
-                                .foregroundStyle(.secondary)
+                            Text(modulesSection.emptyText).foregroundStyle(.secondary)
                         } else {
-                            ForEach(store.learningModules) { module in
-                                moduleCard(module)
-                            }
+                            ForEach(store.learningModules) { moduleCard($0) }
                         }
                     }
-                    .padding(16)
+                    .padding(AppTheme.screenPadding)
                     .padding(.bottom, 88)
                 }
 
                 SingleFloatingAction { showAddGoal = true }
-                    .padding(16)
+                    .padding(AppTheme.screenPadding)
             }
-            .lifelineScreenTitle("Learning")
+            .lifelineScreenTitle(screen.title)
             .sheet(isPresented: $showAddGoal) {
-                LearningGoalForm(mode: .add) { store.addLearningGoal($0) }
+                LearningGoalForm(
+                    title: screen.forms["addGoalTitle"] ?? "Add Learning Goal",
+                    confirmLabel: "Add",
+                    mode: .add
+                ) { store.addLearningGoal($0) }
             }
             .sheet(item: $editingGoal) { goal in
-                LearningGoalForm(mode: .edit(goal)) { store.updateLearningGoal($0) }
+                LearningGoalForm(
+                    title: screen.forms["editGoalTitle"] ?? "Edit Learning Goal",
+                    confirmLabel: "Save",
+                    mode: .edit(goal)
+                ) { store.updateLearningGoal($0) }
             }
         }
     }
@@ -67,11 +71,7 @@ struct LearningView: View {
                 HStack {
                     Text(goal.title).font(.headline)
                     Spacer()
-                    Button {
-                        editingGoal = goal
-                    } label: {
-                        Image(systemName: "pencil")
-                    }
+                    Button { editingGoal = goal } label: { Image(systemName: "pencil") }
                 }
                 Text(goal.description).font(.body)
                 ProgressView(value: goal.progress)
@@ -94,11 +94,11 @@ struct LearningView: View {
                 }
                 Spacer()
                 if module.completed {
-                    Text("✓ Completed")
+                    Text(modulesSection.completedLabel ?? "✓ Completed")
                         .font(.caption.bold())
                         .foregroundStyle(Color.accentColor)
                 } else {
-                    Button("Complete") {
+                    Button(modulesSection.completeButtonLabel ?? "Complete") {
                         store.completeModule(id: module.id)
                     }
                     .buttonStyle(.borderedProminent)
@@ -112,19 +112,23 @@ struct LearningView: View {
 private struct LearningGoalForm: View {
     enum Mode { case add, edit(LearningGoalRecord) }
 
+    let title: String
+    let confirmLabel: String
     let mode: Mode
     let onSave: (LearningGoalRecord) -> Void
     @Environment(\.dismiss) private var dismiss
 
-    @State private var title = ""
+    @State private var goalTitle = ""
     @State private var description = ""
     private var existingGoal: LearningGoalRecord?
 
-    init(mode: Mode, onSave: @escaping (LearningGoalRecord) -> Void) {
+    init(title: String, confirmLabel: String, mode: Mode, onSave: @escaping (LearningGoalRecord) -> Void) {
+        self.title = title
+        self.confirmLabel = confirmLabel
         self.mode = mode
         self.onSave = onSave
         if case .edit(let goal) = mode {
-            _title = State(initialValue: goal.title)
+            _goalTitle = State(initialValue: goal.title)
             _description = State(initialValue: goal.description)
             existingGoal = goal
         }
@@ -133,39 +137,28 @@ private struct LearningGoalForm: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Title", text: $title)
+                TextField("Title", text: $goalTitle)
                 TextField("Description", text: $description, axis: .vertical)
                     .lineLimit(3...5)
             }
-            .navigationTitle(modeTitle)
+            .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(modeButtonTitle) {
-                        guard !title.isEmpty, !description.isEmpty else { return }
-                        let record = LearningGoalRecord(
+                    Button(confirmLabel) {
+                        guard !goalTitle.isEmpty, !description.isEmpty else { return }
+                        onSave(LearningGoalRecord(
                             id: existingGoal?.id ?? UUID().uuidString,
-                            title: title,
+                            title: goalTitle,
                             description: description,
                             progress: existingGoal?.progress ?? 0,
                             status: existingGoal?.status ?? .notStarted
-                        )
-                        onSave(record)
+                        ))
                         dismiss()
                     }
                 }
             }
         }
         .presentationDetents([.medium])
-    }
-
-    private var modeTitle: String {
-        if case .edit = mode { return "Edit Learning Goal" }
-        return "Add Learning Goal"
-    }
-
-    private var modeButtonTitle: String {
-        if case .edit = mode { return "Save" }
-        return "Add"
     }
 }

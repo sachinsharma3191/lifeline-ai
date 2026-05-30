@@ -2,13 +2,15 @@ import SwiftUI
 
 struct ServicesView: View {
     @Bindable var store: AppStore
+    private let config = AppConfigRoot.shared
+    private var screen: AppConfigServicesScreen { config.screens.services }
+
     @State private var aiPrompt = ""
     @State private var selectedService: CommunityServiceRecord?
 
-    private let aiSuggestions = [
-        AiSuggestion("Services help"),
-        AiSuggestion("Community", prompt: "Community help")
-    ]
+    private var aiSuggestions: [AiSuggestionItem] {
+        screen.aiSuggestions.map(AiSuggestionItem.init)
+    }
 
     private var searchResults: [CommunityServiceRecord] {
         CommunityServicesCatalog.search(query: store.serviceSearchQuery)
@@ -17,14 +19,14 @@ struct ServicesView: View {
     var body: some View {
         Group {
             if let selectedService {
-                ServiceDetailView(service: selectedService) {
+                ServiceDetailView(service: selectedService, detail: screen.detail) {
                     self.selectedService = nil
                 }
             } else {
                 NavigationStack {
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            TextField("Search services...", text: $store.serviceSearchQuery)
+                        VStack(alignment: .leading, spacing: AppTheme.sectionGap) {
+                            TextField(screen.searchPlaceholder, text: $store.serviceSearchQuery)
                                 .textFieldStyle(.roundedBorder)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
@@ -32,45 +34,34 @@ struct ServicesView: View {
                             AiCoachBlock(
                                 prompt: $aiPrompt,
                                 response: store.servicesAiResponse,
-                                suggestions: aiSuggestions
+                                suggestions: aiSuggestions,
+                                coachLabel: screen.aiCoachLabel
                             ) { store.askServicesAi($0) }
 
                             if store.serviceSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                Text("Search to see services")
+                                Text(screen.searchEmptyText)
                                     .foregroundStyle(.secondary)
                             } else {
-                                ForEach(searchResults) { service in
-                                    serviceCard(service)
-                                }
+                                ForEach(searchResults) { serviceCard($0) }
                             }
                         }
-                        .padding(16)
+                        .padding(AppTheme.screenPadding)
                     }
-                    .lifelineScreenTitle("Community Services")
+                    .lifelineScreenTitle(screen.title)
                 }
             }
         }
     }
 
     private func serviceCard(_ service: CommunityServiceRecord) -> some View {
-        Button {
-            selectedService = service
-        } label: {
+        Button { selectedService = service } label: {
             LifelineCard {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(service.name)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    Text(service.description)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                    Text(service.category.rawValue)
-                        .font(.caption)
-                        .foregroundStyle(Color.accentColor)
+                    Text(service.name).font(.headline).foregroundStyle(.primary)
+                    Text(service.description).font(.body).foregroundStyle(.primary)
+                    Text(service.category.rawValue).font(.caption).foregroundStyle(Color.accentColor)
                     if let location = service.location {
-                        Text("📍 \(location)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text("📍 \(location)").font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -81,22 +72,26 @@ struct ServicesView: View {
 
 struct ServiceDetailView: View {
     let service: CommunityServiceRecord
+    let detail: AppConfigServicesDetail
     let onBack: () -> Void
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(service.description)
-                        .font(.body)
-
-                    Text("Category: \(service.category.rawValue)")
+                    Text(service.description).font(.body)
+                    Text("\(detail.categoryPrefix)\(service.category.rawValue)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
                     if let location = service.location {
                         Button {
-                            openGoogleMaps(for: location)
+                            if let url = ConfigUiHelpers.mapsUrl(
+                                template: AppConfigRoot.shared.servicesCatalog.mapsUrlTemplate,
+                                address: location
+                            ) {
+                                UIApplication.shared.open(url)
+                            }
                         } label: {
                             Text(location)
                                 .font(.body)
@@ -106,41 +101,29 @@ struct ServiceDetailView: View {
                     }
 
                     if let contact = service.contactInfo {
-                        Text("Contact: \(contact)")
-                            .font(.caption)
+                        Text("\(detail.contactPrefix)\(contact)").font(.caption)
                     }
-
                     if let website = service.website {
-                        Text("Website: \(website)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Text("\(detail.websitePrefix)\(website)").font(.caption).foregroundStyle(.secondary)
                     }
 
                     LifelineCard {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Map (demo)")
-                                .font(.subheadline.bold())
-                            Text("[Dummy Google Map Placeholder]")
+                            Text(detail.mapDemoTitle).font(.subheadline.bold())
+                            Text(detail.mapPlaceholder)
                                 .foregroundStyle(.secondary)
                                 .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
                         }
                     }
                 }
-                .padding(16)
+                .padding(AppTheme.screenPadding)
             }
             .lifelineScreenTitle(service.name)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Back", action: onBack)
+                    Button(detail.backLabel, action: onBack)
                 }
             }
-        }
-    }
-
-    private func openGoogleMaps(for address: String) {
-        let query = address.replacingOccurrences(of: " ", with: "+")
-        if let url = URL(string: "https://www.google.com/maps/search/?api=1&query=\(query)") {
-            UIApplication.shared.open(url)
         }
     }
 }
