@@ -21,10 +21,6 @@ final class AppStore {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         fileURL = documents.appendingPathComponent("lifeline_ai_data.json")
         load()
-        if transactions.isEmpty && learningModules.isEmpty {
-            seedDemoData()
-            save()
-        }
     }
 
     var incomeTotal: Double {
@@ -123,29 +119,5 @@ final class AppStore {
         )
         guard let data = try? JSONEncoder().encode(snapshot) else { return }
         try? data.write(to: fileURL, options: .atomic)
-    }
-
-    private func seedDemoData() {
-        transactions = [
-            TransactionRecord(id: UUID().uuidString, amount: 1200, type: .income, category: "Part-time Job", timestamp: Date(), description: "Campus work study"),
-            TransactionRecord(id: UUID().uuidString, amount: 850, type: .expense, category: "Rent", timestamp: Date(), description: "Shared apartment near Westcliff"),
-            TransactionRecord(id: UUID().uuidString, amount: 120, type: .expense, category: "Groceries", timestamp: Date(), description: "Weekly shop"),
-            TransactionRecord(id: UUID().uuidString, amount: 45, type: .expense, category: "Transit", timestamp: Date(), description: "Monthly pass top-up")
-        ]
-
-        financialGoals = [
-            FinancialGoalRecord(id: UUID().uuidString, name: "Emergency fund", targetAmount: 1000, currentAmount: 250, category: "Savings"),
-            FinancialGoalRecord(id: UUID().uuidString, name: "Relocation deposit", targetAmount: 2000, currentAmount: 600, category: "Housing")
-        ]
-
-        learningModules = [
-            LearningModuleRecord(id: "mod_1", title: "Budgeting 101", description: "Basics for student finances", estimatedDuration: 20, completed: false),
-            LearningModuleRecord(id: "mod_2", title: "Campus Resources", description: "Find aid and services quickly", estimatedDuration: 15, completed: false),
-            LearningModuleRecord(id: "mod_3", title: "Relocation Checklist", description: "Settling into a new city", estimatedDuration: 25, completed: true)
-        ]
-
-        learningGoals = [
-            LearningGoalRecord(id: UUID().uuidString, title: "Finish midterm prep", description: "Complete two practice sets", progress: 0.4, status: .inProgress)
-        ]
     }
 }

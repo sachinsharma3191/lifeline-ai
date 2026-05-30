@@ -12,7 +12,7 @@ struct ContentView: View {
                 .tabItem { Label("Health", systemImage: "heart.fill") }
 
             FinanceView(store: store)
-                .tabItem { Label("Finance", systemImage: "dollarsign.circle.fill") }
+                .tabItem { Label("Finance", systemImage: "building.columns.fill") }
 
             LearningView(store: store)
                 .tabItem { Label("Learning", systemImage: "graduationcap.fill") }

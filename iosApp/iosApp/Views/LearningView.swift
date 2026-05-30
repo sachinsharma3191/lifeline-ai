@@ -6,65 +6,104 @@ struct LearningView: View {
     @State private var showAddGoal = false
     @State private var editingGoal: LearningGoalRecord?
 
+    private let aiSuggestions = [
+        AiSuggestion("Progress", prompt: "Learning progress"),
+        AiSuggestion("Study plan")
+    ]
+
     var body: some View {
         NavigationStack {
-            List {
-                Section("Offline AI Coach") {
-                    AiCoachSection(
-                        prompt: $aiPrompt,
-                        response: store.learningAiResponse,
-                        suggestions: ["Learning progress", "Study plan"]
-                    ) { store.askLearningAi($0) }
-                }
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AiCoachBlock(
+                            prompt: $aiPrompt,
+                            response: store.learningAiResponse,
+                            suggestions: aiSuggestions
+                        ) { store.askLearningAi($0) }
 
-                Section("Learning Goals") {
-                    ForEach(store.learningGoals) { goal in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(goal.title).font(.headline)
-                                Spacer()
-                                Button("Edit") { editingGoal = goal }
-                                    .font(.caption)
-                            }
-                            Text(goal.description).font(.subheadline).foregroundStyle(.secondary)
-                            ProgressView(value: goal.progress)
-                            Text("\(Int(goal.progress * 100))% · \(goal.status.rawValue.replacingOccurrences(of: "_", with: " ").capitalized)")
-                                .font(.caption)
+                        SectionHeader(title: "Learning Goals")
+
+                        if store.learningGoals.isEmpty {
+                            Text("No learning goals yet.")
                                 .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(store.learningGoals) { goal in
+                                learningGoalCard(goal)
+                            }
+                        }
+
+                        SectionHeader(title: "Modules")
+
+                        if store.learningModules.isEmpty {
+                            Text("No modules yet.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(store.learningModules) { module in
+                                moduleCard(module)
+                            }
                         }
                     }
+                    .padding(16)
+                    .padding(.bottom, 88)
                 }
 
-                Section("Modules") {
-                    ForEach(store.learningModules) { module in
-                        HStack(alignment: .top) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(module.title).font(.headline)
-                                Text(module.description).font(.caption).foregroundStyle(.secondary)
-                                Text("\(module.estimatedDuration) min").font(.caption2).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if module.completed {
-                                Text("Done").font(.caption.bold()).foregroundStyle(.green)
-                            } else {
-                                Button("Complete") { store.completeModule(id: module.id) }
-                                    .font(.caption)
-                            }
-                        }
-                    }
-                }
+                SingleFloatingAction { showAddGoal = true }
+                    .padding(16)
             }
-            .navigationTitle("Learning")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showAddGoal = true } label: { Image(systemName: "plus") }
-                }
-            }
+            .lifelineScreenTitle("Learning")
             .sheet(isPresented: $showAddGoal) {
                 LearningGoalForm(mode: .add) { store.addLearningGoal($0) }
             }
             .sheet(item: $editingGoal) { goal in
                 LearningGoalForm(mode: .edit(goal)) { store.updateLearningGoal($0) }
+            }
+        }
+    }
+
+    private func learningGoalCard(_ goal: LearningGoalRecord) -> some View {
+        LifelineCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(goal.title).font(.headline)
+                    Spacer()
+                    Button {
+                        editingGoal = goal
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                }
+                Text(goal.description).font(.body)
+                ProgressView(value: goal.progress)
+                Text("\(Int(goal.progress * 100))% - \(goal.status.rawValue)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func moduleCard(_ module: LearningModuleRecord) -> some View {
+        LifelineCard {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(module.title).font(.headline)
+                    Text(module.description).font(.caption).foregroundStyle(.secondary)
+                    Text("\(module.estimatedDuration) min")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if module.completed {
+                    Text("✓ Completed")
+                        .font(.caption.bold())
+                        .foregroundStyle(Color.accentColor)
+                } else {
+                    Button("Complete") {
+                        store.completeModule(id: module.id)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
             }
         }
     }
@@ -79,9 +118,7 @@ private struct LearningGoalForm: View {
 
     @State private var title = ""
     @State private var description = ""
-    @State private var progress = 0.0
-    @State private var status: GoalStatus = .notStarted
-    private var existingId: String?
+    private var existingGoal: LearningGoalRecord?
 
     init(mode: Mode, onSave: @escaping (LearningGoalRecord) -> Void) {
         self.mode = mode
@@ -89,9 +126,7 @@ private struct LearningGoalForm: View {
         if case .edit(let goal) = mode {
             _title = State(initialValue: goal.title)
             _description = State(initialValue: goal.description)
-            _progress = State(initialValue: goal.progress)
-            _status = State(initialValue: goal.status)
-            existingId = goal.id
+            existingGoal = goal
         }
     }
 
@@ -99,27 +134,21 @@ private struct LearningGoalForm: View {
         NavigationStack {
             Form {
                 TextField("Title", text: $title)
-                TextField("Description", text: $description, axis: .vertical).lineLimit(3...5)
-                Picker("Status", selection: $status) {
-                    ForEach(GoalStatus.allCases, id: \.self) { Text($0.rawValue.replacingOccurrences(of: "_", with: " ").capitalized).tag($0) }
-                }
-                VStack(alignment: .leading) {
-                    Text("Progress: \(Int(progress * 100))%")
-                    Slider(value: $progress, in: 0...1)
-                }
+                TextField("Description", text: $description, axis: .vertical)
+                    .lineLimit(3...5)
             }
             .navigationTitle(modeTitle)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(modeButtonTitle) {
                         guard !title.isEmpty, !description.isEmpty else { return }
                         let record = LearningGoalRecord(
-                            id: existingId ?? UUID().uuidString,
+                            id: existingGoal?.id ?? UUID().uuidString,
                             title: title,
                             description: description,
-                            progress: progress,
-                            status: status
+                            progress: existingGoal?.progress ?? 0,
+                            status: existingGoal?.status ?? .notStarted
                         )
                         onSave(record)
                         dismiss()
@@ -127,10 +156,16 @@ private struct LearningGoalForm: View {
                 }
             }
         }
+        .presentationDetents([.medium])
     }
 
     private var modeTitle: String {
-        if case .edit = mode { return "Edit Goal" }
-        return "Add Goal"
+        if case .edit = mode { return "Edit Learning Goal" }
+        return "Add Learning Goal"
+    }
+
+    private var modeButtonTitle: String {
+        if case .edit = mode { return "Save" }
+        return "Add"
     }
 }

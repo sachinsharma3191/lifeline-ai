@@ -2,39 +2,39 @@ import Foundation
 
 enum CommunityServicesCatalog {
     static let all: [CommunityServiceRecord] = {
-        let pilotCities = [
-            ("Irvine", "CA", "92612"),
-            ("Fremont", "CA", "94536"),
-            ("Berkeley", "CA", "94704"),
-            ("San Francisco", "CA", "94102")
-        ]
-
+        let streetNames = ["Main St", "Market St", "Broadway", "Pine St", "Oak Ave", "Sunset Blvd"]
+        let cities = ["San Francisco", "San Jose", "Oakland", "Berkeley"]
         let categories = ServiceCategory.allCases
-        return (1...40).map { index in
+
+        return (1...100).map { index in
             let category = categories[(index - 1) % categories.count]
-            let city = pilotCities[(index - 1) % pilotCities.count]
-            let street = 100 + index
+            let streetNumber = 100 + index
+            let streetName = streetNames[(index - 1) % streetNames.count]
+            let city = cities[(index - 1) % cities.count]
+            let zip = String(94100 + (index % 80))
+            let address = "\(streetNumber) \(streetName), \(city), CA \(zip)"
 
             let name: String
             switch category {
-            case .healthcare: name = "Campus Health Clinic \(index)"
-            case .mentalHealth: name = "Student Counseling Center \(index)"
-            case .financialAssistance: name = "Financial Aid Desk \(index)"
-            case .education: name = "Academic Success Program \(index)"
-            case .housing: name = "Housing Support Office \(index)"
-            case .foodAssistance: name = "Community Food Pantry \(index)"
-            case .legal: name = "Legal Aid Clinic \(index)"
+            case .healthcare: name = "Health Clinic \(index)"
+            case .mentalHealth: name = "Counseling Center \(index)"
+            case .financialAssistance: name = "Financial Help Desk \(index)"
+            case .education: name = "Education Program \(index)"
+            case .housing: name = "Housing Support \(index)"
+            case .foodAssistance: name = "Food Pantry \(index)"
+            case .legal: name = "Legal Aid \(index)"
             case .other: name = "Community Resource \(index)"
             }
 
+            let categoryLabel = category.rawValue.replacingOccurrences(of: "_", with: " ").lowercased()
             return CommunityServiceRecord(
-                id: "service_\(index)",
+                id: "seed_service_\(index)",
                 name: name,
-                description: "Localized \(category.displayName.lowercased()) resource for students and relocators (#\(index)).",
+                description: "Demo service entry #\(index) for \(categoryLabel).",
                 category: category,
-                location: "\(street) University Ave, \(city.0), \(city.1) \(city.2)",
+                location: address,
                 contactInfo: "(555) 010-\(String(format: "%04d", 1000 + index))",
-                website: "https://example.org/lifeline/service/\(index)"
+                website: "https://example.org/service/\(index)"
             )
         }
     }()
@@ -43,16 +43,9 @@ enum CommunityServicesCatalog {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
 
-        let tokens = trimmed.lowercased().split(separator: " ").map(String.init)
         return all.filter { service in
-            let haystack = [
-                service.name,
-                service.description,
-                service.category.displayName,
-                service.location ?? ""
-            ].joined(separator: " ").lowercased()
-
-            return tokens.allSatisfy { haystack.contains($0) }
-        }
+            service.name.localizedCaseInsensitiveContains(trimmed) ||
+                service.description.localizedCaseInsensitiveContains(trimmed)
+        }.sorted { $0.name < $1.name }
     }
 }

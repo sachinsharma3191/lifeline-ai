@@ -8,59 +8,56 @@ struct FinanceView: View {
     @State private var editingTransaction: TransactionRecord?
     @State private var editingGoal: FinancialGoalRecord?
 
+    private let aiSuggestions = [
+        AiSuggestion("Finance summary"),
+        AiSuggestion("Top category", prompt: "Top expense category"),
+        AiSuggestion("Budget", prompt: "Budget advice")
+    ]
+
     var body: some View {
         NavigationStack {
-            List {
-                Section("Offline AI Coach") {
-                    AiCoachSection(
-                        prompt: $aiPrompt,
-                        response: store.financeAiResponse,
-                        suggestions: ["Finance summary", "Top expense category", "Budget advice"]
-                    ) { store.askFinanceAi($0) }
-                }
+            ZStack(alignment: .bottomTrailing) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AiCoachBlock(
+                            prompt: $aiPrompt,
+                            response: store.financeAiResponse,
+                            suggestions: aiSuggestions
+                        ) { store.askFinanceAi($0) }
 
-                Section("Financial Goals") {
-                    ForEach(store.financialGoals) { goal in
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text(goal.name).font(.headline)
-                                Spacer()
-                                Button("Edit") { editingGoal = goal }
-                                    .font(.caption)
-                            }
-                            ProgressView(value: min(goal.currentAmount / max(goal.targetAmount, 1), 1))
-                            Text("\(goal.currentAmount, format: .currency(code: "USD")) / \(goal.targetAmount, format: .currency(code: "USD"))")
-                                .font(.caption)
+                        SectionHeader(title: "Financial Goals")
+
+                        if store.financialGoals.isEmpty {
+                            Text("No goals yet.")
                                 .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(store.financialGoals) { goal in
+                                goalCard(goal)
+                            }
+                        }
+
+                        SectionHeader(title: "Recent Transactions")
+
+                        if store.transactions.isEmpty {
+                            Text("No transactions yet.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(store.transactions.prefix(10)) { transaction in
+                                transactionCard(transaction)
+                            }
                         }
                     }
+                    .padding(16)
+                    .padding(.bottom, 88)
                 }
 
-                Section("Recent Transactions") {
-                    ForEach(store.transactions.prefix(20)) { transaction in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(transaction.category).font(.headline)
-                                if let description = transaction.description {
-                                    Text(description).font(.caption).foregroundStyle(.secondary)
-                                }
-                            }
-                            Spacer()
-                            Text(transaction.amount, format: .currency(code: "USD"))
-                                .foregroundStyle(transaction.type == .expense ? .red : .green)
-                            Button("Edit") { editingTransaction = transaction }
-                                .font(.caption)
-                        }
-                    }
-                }
+                DualFloatingActions(
+                    onAddGoal: { showAddGoal = true },
+                    onAddTransaction: { showAddTransaction = true }
+                )
+                .padding(16)
             }
-            .navigationTitle("Finance")
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { showAddGoal = true } label: { Image(systemName: "target") }
-                    Button { showAddTransaction = true } label: { Image(systemName: "plus") }
-                }
-            }
+            .lifelineScreenTitle("Finance")
             .sheet(isPresented: $showAddTransaction) {
                 TransactionForm(mode: .add) { store.addTransaction($0) }
             }
@@ -72,6 +69,46 @@ struct FinanceView: View {
             }
             .sheet(item: $editingGoal) { goal in
                 GoalForm(mode: .edit(goal)) { store.updateFinancialGoal($0) }
+            }
+        }
+    }
+
+    private func goalCard(_ goal: FinancialGoalRecord) -> some View {
+        LifelineCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(goal.name).font(.headline)
+                    Spacer()
+                    Button {
+                        editingGoal = goal
+                    } label: {
+                        Image(systemName: "pencil")
+                    }
+                }
+                ProgressView(value: min(goal.currentAmount / max(goal.targetAmount, 1), 1))
+                Text("$\(FormatUtils.formatAmount(goal.currentAmount)) / $\(FormatUtils.formatAmount(goal.targetAmount))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func transactionCard(_ transaction: TransactionRecord) -> some View {
+        LifelineCard {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(transaction.category).font(.headline)
+                    if let description = transaction.description {
+                        Text(description).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                TransactionAmountText(amount: transaction.amount, type: transaction.type)
+                Button {
+                    editingTransaction = transaction
+                } label: {
+                    Image(systemName: "pencil")
+                }
             }
         }
     }
@@ -87,8 +124,7 @@ private struct TransactionForm: View {
     @State private var amount = ""
     @State private var category = ""
     @State private var description = ""
-    @State private var type: TransactionType = .expense
-    private var existingId: String?
+    private var existingRecord: TransactionRecord?
 
     init(mode: Mode, onSave: @escaping (TransactionRecord) -> Void) {
         self.mode = mode
@@ -97,18 +133,15 @@ private struct TransactionForm: View {
             _amount = State(initialValue: String(record.amount))
             _category = State(initialValue: record.category)
             _description = State(initialValue: record.description ?? "")
-            _type = State(initialValue: record.type)
-            existingId = record.id
+            existingRecord = record
         }
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                Picker("Type", selection: $type) {
-                    ForEach(TransactionType.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) }
-                }
-                TextField("Amount", text: $amount).keyboardType(.decimalPad)
+                TextField("Amount", text: $amount)
+                    .keyboardType(.decimalPad)
                 TextField("Category", text: $category)
                 TextField("Description", text: $description)
             }
@@ -116,14 +149,14 @@ private struct TransactionForm: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(modeButtonTitle) {
                         guard let value = Double(amount), !category.isEmpty else { return }
                         let record = TransactionRecord(
-                            id: existingId ?? UUID().uuidString,
+                            id: existingRecord?.id ?? UUID().uuidString,
                             amount: value,
-                            type: type,
+                            type: existingRecord?.type ?? .expense,
                             category: category,
-                            timestamp: Date(),
+                            timestamp: existingRecord?.timestamp ?? Date(),
                             description: description.isEmpty ? nil : description
                         )
                         onSave(record)
@@ -132,11 +165,17 @@ private struct TransactionForm: View {
                 }
             }
         }
+        .presentationDetents([.medium])
     }
 
     private var modeTitle: String {
         if case .edit = mode { return "Edit Transaction" }
         return "Add Transaction"
+    }
+
+    private var modeButtonTitle: String {
+        if case .edit = mode { return "Save" }
+        return "Add"
     }
 }
 
@@ -149,9 +188,8 @@ private struct GoalForm: View {
 
     @State private var name = ""
     @State private var targetAmount = ""
-    @State private var currentAmount = "0"
     @State private var category = ""
-    private var existingId: String?
+    private var existingGoal: FinancialGoalRecord?
 
     init(mode: Mode, onSave: @escaping (FinancialGoalRecord) -> Void) {
         self.mode = mode
@@ -159,31 +197,30 @@ private struct GoalForm: View {
         if case .edit(let goal) = mode {
             _name = State(initialValue: goal.name)
             _targetAmount = State(initialValue: String(goal.targetAmount))
-            _currentAmount = State(initialValue: String(goal.currentAmount))
             _category = State(initialValue: goal.category)
-            existingId = goal.id
+            existingGoal = goal
         }
     }
 
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Goal name", text: $name)
-                TextField("Target amount", text: $targetAmount).keyboardType(.decimalPad)
-                TextField("Current amount", text: $currentAmount).keyboardType(.decimalPad)
+                TextField("Goal Name", text: $name)
+                TextField("Target Amount", text: $targetAmount)
+                    .keyboardType(.decimalPad)
                 TextField("Category", text: $category)
             }
             .navigationTitle(modeTitle)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(modeButtonTitle) {
                         guard let target = Double(targetAmount), !name.isEmpty else { return }
                         let record = FinancialGoalRecord(
-                            id: existingId ?? UUID().uuidString,
+                            id: existingGoal?.id ?? UUID().uuidString,
                             name: name,
                             targetAmount: target,
-                            currentAmount: Double(currentAmount) ?? 0,
+                            currentAmount: existingGoal?.currentAmount ?? 0,
                             category: category
                         )
                         onSave(record)
@@ -192,10 +229,16 @@ private struct GoalForm: View {
                 }
             }
         }
+        .presentationDetents([.medium])
     }
 
     private var modeTitle: String {
-        if case .edit = mode { return "Edit Goal" }
-        return "Add Goal"
+        if case .edit = mode { return "Edit Financial Goal" }
+        return "Add Financial Goal"
+    }
+
+    private var modeButtonTitle: String {
+        if case .edit = mode { return "Save" }
+        return "Add"
     }
 }

@@ -6,104 +6,115 @@ struct HomeView: View {
     private let pilotAreas = ["Westcliff University", "UCI Irvine", "LA / Bay Area"]
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Your AI-powered lifestyle coach for students and relocators.")
-                        .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Lifeline AI")
+                    .font(.largeTitle.bold())
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Pilot launch areas")
-                            .font(.headline)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack {
-                                ForEach(pilotAreas, id: \.self) { area in
-                                    Label(area, systemImage: "mappin.and.ellipse")
-                                        .font(.caption)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(Color.accentColor.opacity(0.15))
-                                        .clipShape(Capsule())
-                                }
+                Text("Your AI-powered lifestyle coach for students and relocators — finance, health, learning, and localized community services in one place.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Pilot launch areas")
+                        .font(.headline.bold())
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(pilotAreas, id: \.self) { area in
+                                Label(area, systemImage: "mappin.and.ellipse")
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(AppTheme.primaryContainer)
+                                    .clipShape(Capsule())
                             }
                         }
                     }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.primaryContainer)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                    Text("Financial wellness snapshot")
-                        .font(.title3.bold())
+                SectionHeader(title: "Financial wellness snapshot")
 
-                    HStack(spacing: 8) {
-                        metricCard(title: "Income", value: store.incomeTotal, color: .green)
-                        metricCard(title: "Expenses", value: store.expenseTotal, color: .red)
-                        metricCard(title: "Net", value: store.netTotal, color: store.netTotal >= 0 ? .green : .red)
-                    }
+                HStack(spacing: 8) {
+                    metricCard(label: "Income", value: store.incomeTotal, highlight: true)
+                    metricCard(label: "Expenses", value: store.expenseTotal, highlight: true)
+                    metricCard(label: "Net", value: store.netTotal, highlight: store.netTotal >= 0)
+                }
 
-                    Text("North Star: track monthly active use and cost savings.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Text("North Star: track monthly active use and cost savings as you build healthier money habits.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-                    dashboardRow(
+                SectionHeader(title: "Your dashboard")
+
+                HStack(spacing: 8) {
+                    dashboardCard(
                         title: "Finance",
                         subtitle: "\(store.transactions.count) transactions · \(store.financialGoals.count) goals",
-                        systemImage: "dollarsign.circle"
+                        systemImage: "building.columns"
                     )
-                    dashboardRow(
+                    .frame(maxWidth: .infinity)
+
+                    dashboardCard(
                         title: "Health",
                         subtitle: "\(store.symptoms.count) symptoms logged",
                         systemImage: "heart.fill"
                     )
-                    dashboardRow(
-                        title: "Learning",
-                        subtitle: "\(store.learningGoals.count) goals · offline study coach",
-                        systemImage: "graduationcap.fill"
-                    )
+                    .frame(maxWidth: .infinity)
+                }
 
+                dashboardCard(
+                    title: "Learning",
+                    subtitle: "\(store.learningGoals.count) goals · offline AI study coach",
+                    systemImage: "graduationcap.fill"
+                )
+
+                LifelineCard {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Value proposition")
-                            .font(.headline)
-                        Text("• Personalized cost-saving insights from local data\n• Lifestyle support beyond budgeting\n• Offline AI coach — no internet required\n• Localized resources for new campuses and cities")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .font(.headline.bold())
+                        Text(
+                            "• Personalized cost-saving insights from your local data\n" +
+                            "• Lifestyle support beyond budgeting (health, learning, services)\n" +
+                            "• Offline AI coach — no API keys or internet required\n" +
+                            "• Localized community resources for new campuses and cities"
+                        )
+                        .font(.body)
                     }
-                    .padding()
-                    .background(Color(.secondarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .padding()
             }
-            .navigationTitle("Lifeline AI")
+            .padding(16)
         }
     }
 
-    private func metricCard(title: String, value: Double, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            CurrencyText(value: value, color: color)
+    private func metricCard(label: String, value: Double, highlight: Bool) -> some View {
+        LifelineCard {
+            VStack(spacing: 4) {
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("$\(FormatUtils.formatAmount(value))")
+                    .font(.headline.bold())
+                    .foregroundStyle(highlight ? Color.accentColor : .red)
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
-    private func dashboardRow(title: String, subtitle: String, systemImage: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.title2)
-                .foregroundStyle(Color.accentColor)
-            VStack(alignment: .leading) {
-                Text(title).font(.headline)
-                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+    private func dashboardCard(title: String, subtitle: String, systemImage: String) -> some View {
+        LifelineCard {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.title2)
+                    .foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading) {
+                    Text(title).font(.headline)
+                    Text(subtitle).font(.caption).foregroundStyle(.secondary)
+                }
             }
-            Spacer()
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
