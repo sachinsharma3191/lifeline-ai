@@ -5,6 +5,7 @@ LifelineAI is a Kotlin Multiplatform (KMP) + Compose Multiplatform project that 
 - Android
 - Desktop (JVM)
 - Web (Kotlin/JS)
+- iOS (native SwiftUI — separate from KMP)
 - Server (Ktor)
 
 It demonstrates a cross-platform app architecture with shared domain logic, persistence via SQLDelight, and a simple backend API.
@@ -200,6 +201,16 @@ in your IDE's toolbar or run it directly from the terminal:
       ```
 
 Note: the Wasm target/task is not enabled by default in this repo.
+
+### Build and Run iOS Application (Native Swift)
+
+The iOS app is a **standalone SwiftUI application** in `iosApp/`. It does not depend on Kotlin Multiplatform.
+
+1. Open `iosApp/iosApp.xcodeproj` in Xcode.
+2. Select an iPhone simulator or device.
+3. Build and run (⌘R).
+
+Features mirror the KMP app: Finance, Health, Learning, Services, and an offline AI coach with local JSON persistence.
 
 ---
 

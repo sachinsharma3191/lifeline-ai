@@ -4,10 +4,16 @@ import com.arkivanov.decompose.ComponentContext
 import com.lifeline.app.AppContainer
 
 interface HomeComponent {
-    // Home screen doesn't need a view model yet
+    val moneyViewModel: com.lifeline.app.viewmodel.MoneyViewModel
+    val healthViewModel: com.lifeline.app.viewmodel.HealthViewModel
+    val learningViewModel: com.lifeline.app.viewmodel.LearningViewModel
 }
 
 class HomeComponentImpl(
     componentContext: ComponentContext,
-    private val appContainer: AppContainer
-) : HomeComponent, ComponentContext by componentContext
+    appContainer: AppContainer
+) : HomeComponent, ComponentContext by componentContext {
+    override val moneyViewModel = appContainer.moneyViewModel
+    override val healthViewModel = appContainer.healthViewModel
+    override val learningViewModel = appContainer.learningViewModel
+}

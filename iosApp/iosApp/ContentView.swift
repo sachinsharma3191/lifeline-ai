@@ -1,21 +1,28 @@
-import UIKit
 import SwiftUI
-import ComposeApp
-
-struct ComposeView: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
-    }
-
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
-}
 
 struct ContentView: View {
+    @Bindable var store: AppStore
+
     var body: some View {
-        ComposeView()
-            .ignoresSafeArea()
+        TabView {
+            HomeView(store: store)
+                .tabItem { Label("Home", systemImage: "house.fill") }
+
+            HealthView(store: store)
+                .tabItem { Label("Health", systemImage: "heart.fill") }
+
+            FinanceView(store: store)
+                .tabItem { Label("Finance", systemImage: "dollarsign.circle.fill") }
+
+            LearningView(store: store)
+                .tabItem { Label("Learning", systemImage: "graduationcap.fill") }
+
+            ServicesView(store: store)
+                .tabItem { Label("Services", systemImage: "mappin.and.ellipse") }
+        }
     }
 }
 
-
-
+#Preview {
+    ContentView(store: AppStore())
+}
